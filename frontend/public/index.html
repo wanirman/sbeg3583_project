@@ -45,6 +45,8 @@
       <button type="submit" class="btn-primary">Create Account</button>
       <p id="register-error" class="error-msg"></p>
     </form>
+    <button id="btn-install-auth" class="btn-secondary btn-full install-btn hidden" style="margin-top:1rem">📲 Install App</button>
+    <p class="ios-install-hint hidden">📱 On iPhone/iPad: tap <strong>Share</strong> ⬆️ then <strong>Add to Home Screen</strong></p>
   </div>
 </div>
 
@@ -172,6 +174,10 @@
       <div class="pending-section">
         <h3>Offline Queue <span id="pending-count" class="count-chip">0</span></h3>
         <button id="btn-force-sync" class="btn-secondary btn-full">Sync Now</button>
+      </div>
+      <div class="install-section">
+        <button id="btn-install-profile" class="btn-primary btn-full install-btn hidden">📲 Install App on this Device</button>
+        <p class="ios-install-hint hidden">📱 On iPhone/iPad: tap <strong>Share</strong> ⬆️ then <strong>Add to Home Screen</strong></p>
       </div>
       <div class="my-records-section">
         <h3>My Records</h3>

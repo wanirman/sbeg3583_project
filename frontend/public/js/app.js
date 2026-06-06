@@ -20,6 +20,44 @@
     });
   }
 
+  // ===== PWA install prompt =====
+  let deferredInstallPrompt = null;
+  const installButtons = () => document.querySelectorAll('.install-btn');
+
+  function showInstallButtons()  { installButtons().forEach(b => b.classList.remove('hidden')); }
+  function hideInstallButtons()  { installButtons().forEach(b => b.classList.add('hidden')); }
+
+  // Browser fires this when the app meets installability criteria and isn't already installed
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();            // stop the mini-infobar; we show our own button
+    deferredInstallPrompt = e;
+    showInstallButtons();
+  });
+
+  installButtons().forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      if (outcome === 'accepted') hideInstallButtons();
+      deferredInstallPrompt = null;
+    });
+  });
+
+  // Once installed, hide the buttons (and they won't reappear)
+  window.addEventListener('appinstalled', hideInstallButtons);
+
+  // Detect if running as an already-installed standalone app
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (isStandalone) hideInstallButtons();
+
+  // iOS Safari doesn't support beforeinstallprompt — show manual instructions instead
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isIOS && !isStandalone) {
+    document.querySelectorAll('.ios-install-hint').forEach(el => el.classList.remove('hidden'));
+  }
+
   // Offline badge
   function updateOnlineStatus() {
     const badge = document.getElementById('offline-badge');
