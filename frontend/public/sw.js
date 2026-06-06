@@ -1,4 +1,4 @@
-const CACHE_NAME = 'biodiversity-pwa-v10';
+const CACHE_NAME = 'biodiversity-pwa-v11';
 const TILE_CACHE = 'map-tiles-v1';
 const OFFLINE_URL = '/offline.html';
 

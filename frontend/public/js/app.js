@@ -178,11 +178,6 @@
     BioGamification.updatePendingCount();
   });
 
-  // Locate button on map — smoothly zoom to the user's current location
-  document.getElementById('btn-locate').addEventListener('click', () => {
-    BioMap.locateUser(17, true);
-  });
-
   // Logout
   document.getElementById('btn-logout').addEventListener('click', () => {
     BioAPI.clearToken();

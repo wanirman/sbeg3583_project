@@ -26,9 +26,31 @@ const BioMap = (() => {
       maxZoom: 19,
     }).addTo(map);
 
+    addLocateControl();   // pin button under the +/- zoom buttons
     loadSightings();
-    locateUser();   // ask for current location and centre there
+    locateUser();         // ask for current location and centre there
     return map;
+  }
+
+  // A Leaflet control button (top-left, below the zoom control) that zooms to the user
+  function addLocateControl() {
+    const LocateCtrl = L.Control.extend({
+      options: { position: 'topleft' },
+      onAdd() {
+        const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control locate-control');
+        const link = L.DomUtil.create('a', '', container);
+        link.href = '#';
+        link.id = 'btn-locate';
+        link.title = 'Zoom to my location';
+        link.setAttribute('role', 'button');
+        link.setAttribute('aria-label', 'Zoom to my location');
+        link.innerHTML = '<svg class="icon"><use href="#i-map-pin"></use></svg>';
+        L.DomEvent.on(link, 'click', L.DomEvent.stop);
+        L.DomEvent.on(link, 'click', () => locateUser(17, true));
+        return container;
+      },
+    });
+    map.addControl(new LocateCtrl());
   }
 
   // Centre the map on the user's current GPS position and show a "you are here" marker.

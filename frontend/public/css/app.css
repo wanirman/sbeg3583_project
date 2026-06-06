@@ -396,10 +396,12 @@ h1, h2, h3, h4,
 .chat-fab { background: var(--green-mid); border: 1px solid rgba(22,48,31,.3); }
 .chat-fab .icon { width: 26px; height: 26px; }
 .map-fab { border: 1px solid rgba(122,92,62,.3); color: var(--green-dark); }
-.map-fab .icon { width: 22px; height: 22px; }
-.map-fab:hover { background: var(--green-pale); }
-.map-fab.locating { opacity: .55; pointer-events: none; }
-.map-fab.locating .icon { animation: iconspin .8s linear infinite; }
+/* Leaflet "zoom to my location" control (sits under the +/- zoom buttons) */
+.locate-control a { display: flex; align-items: center; justify-content: center; color: var(--green-dark); }
+.locate-control a .icon { width: 18px; height: 18px; }
+.locate-control a:hover { background: var(--green-pale); }
+.locate-control a.locating { opacity: .55; pointer-events: none; }
+.locate-control a.locating .icon { animation: iconspin .8s linear infinite; }
 
 /* Leaderboard — ranked medals */
 .lb-rank { display: flex; align-items: center; justify-content: center; }
