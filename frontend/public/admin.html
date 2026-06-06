@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin – BioReport</title>
+  <link rel="stylesheet" href="/css/app.css" />
+  <style>
+    body { overflow: auto; background: #f4f7f5; font-family: -apple-system, sans-serif; }
+    .admin-wrap { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+    .admin-header { background: #1a3c2e; color: white; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .admin-header h1 { font-size: 1.2rem; }
+    .filter-row { display: flex; gap: .5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .filter-row select, .filter-row button { padding: .5rem .9rem; border-radius: 8px; border: 1.5px solid #ddd; font-size: .9rem; cursor: pointer; }
+    .filter-row button { background: #2d7a4f; color: white; border-color: #2d7a4f; }
+    .thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; cursor: pointer; }
+    .action-btns { display: flex; gap: .4rem; }
+    .btn-verify  { background: #2d7a4f; color: white; border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .8rem; }
+    .btn-reject  { background: #e53935; color: white; border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .8rem; }
+    #login-panel { max-width: 320px; margin: 5rem auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.1); }
+    #login-panel h2 { margin-bottom: 1rem; }
+    #login-panel input { width: 100%; padding: .7rem; border: 1.5px solid #ddd; border-radius: 8px; margin-bottom: .7rem; font-size: 1rem; }
+    .report-img-modal { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: flex; align-items: center; justify-content: center; z-index: 999; }
+    .report-img-modal img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
+  </style>
+</head>
+<body>
+
+<div id="login-panel">
+  <h2>Admin Login</h2>
+  <input type="email" id="admin-email" placeholder="Admin email" />
+  <input type="password" id="admin-pwd" placeholder="Password" />
+  <button class="btn-primary btn-full" onclick="adminLogin()">Login</button>
+  <p id="login-err" class="error-msg"></p>
+</div>
+
+<div id="admin-panel" style="display:none">
+  <div class="admin-header">
+    <h1>🌿 BioReport Admin</h1>
+    <button class="btn-text" onclick="adminLogout()" style="color:#ccc">Logout</button>
+  </div>
+  <div class="admin-wrap">
+    <div class="filter-row">
+      <select id="filter-status" onchange="loadReports()">
+        <option value="pending">Pending</option>
+        <option value="verified">Verified</option>
+        <option value="rejected">Rejected</option>
+        <option value="">All</option>
+      </select>
+      <select id="filter-category" onchange="loadReports()">
+        <option value="">All Categories</option>
+      </select>
+      <button onclick="loadReports()">Refresh</button>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Photo</th><th>Species</th><th>Category</th>
+            <th>Observer</th><th>Location</th><th>Date</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="reports-tbody"></tbody>
+      </table>
+    </div>
+    <div id="no-reports" style="text-align:center;color:#888;padding:2rem;display:none">No reports found.</div>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+let adminToken = null;
+
+async function adminLogin() {
+  const email = document.getElementById('admin-email').value;
+  const pwd   = document.getElementById('admin-pwd').value;
+  const err   = document.getElementById('login-err');
+  err.textContent = '';
+  try {
+    const res = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, password: pwd}) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    if (data.user_type !== 'admin') throw new Error('Not an admin account');
+    adminToken = data.token;
+    document.getElementById('login-panel').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    loadCategories();
+    loadReports();
+  } catch(e) { err.textContent = e.message; }
+}
+
+function adminLogout() {
+  adminToken = null;
+  document.getElementById('admin-panel').style.display = 'none';
+  document.getElementById('login-panel').style.display = 'block';
+}
+
+async function apiFetch(path, opts = {}) {
+  if (adminToken) opts.headers = { ...(opts.headers||{}), 'Authorization': `Bearer ${adminToken}` };
+  const res = await fetch(API + path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Error');
+  return data;
+}
+
+async function loadCategories() {
+  const { categories } = await apiFetch('/dashboard/categories');
+  const sel = document.getElementById('filter-category');
+  categories.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.category_id; opt.textContent = c.category_name;
+    sel.appendChild(opt);
+  });
+}
+
+async function loadReports() {
+  const status   = document.getElementById('filter-status').value;
+  const category = document.getElementById('filter-category').value;
+  let q = '?limit=100';
+  if (status)   q += `&status=${status}`;
+  if (category) q += `&category_id=${category}`;
+
+  const { sightings } = await apiFetch(`/sighting${q}`);
+  const tbody = document.getElementById('reports-tbody');
+  tbody.innerHTML = '';
+
+  if (!sightings.length) {
+    document.getElementById('no-reports').style.display = 'block';
+    return;
+  }
+  document.getElementById('no-reports').style.display = 'none';
+
+  sightings.forEach(r => {
+    const tr = document.createElement('tr');
+    const photo = r.photo_url ? `<img class="thumb" src="${r.photo_url}" onclick="showPhoto('${r.photo_url}')" />` : '—';
+    const date = new Date(r.timestamp).toLocaleString('en-MY', {dateStyle:'short', timeStyle:'short'});
+    tr.innerHTML = `
+      <td>${r.report_id}</td>
+      <td>${photo}</td>
+      <td>${r.species_name}<br/><small style="color:#888">${r.scientific_name||''}</small></td>
+      <td>${r.category_name}</td>
+      <td>${r.user_name}</td>
+      <td><small>${r.latitude?.toFixed(4)}, ${r.longitude?.toFixed(4)}</small></td>
+      <td><small>${date}</small></td>
+      <td><span class="status-${r.report_status}">${r.report_status}</span></td>
+      <td>
+        <div class="action-btns">
+          ${r.report_status !== 'verified' ? `<button class="btn-verify" onclick="verify(${r.report_id},'verified')">✓ Verify</button>` : ''}
+          ${r.report_status !== 'rejected' ? `<button class="btn-reject" onclick="verify(${r.report_id},'rejected')">✗ Reject</button>` : ''}
+        </div>
+        <textarea id="comment-${r.report_id}" placeholder="Admin comment..." style="width:100%;font-size:.75rem;margin-top:.3rem;border:1px solid #ddd;border-radius:4px;padding:.3rem" rows="1"></textarea>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function verify(report_id, status) {
+  const comment = document.getElementById(`comment-${report_id}`)?.value || '';
+  try {
+    await apiFetch(`/sighting/${report_id}/verify`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` },
+      body: JSON.stringify({ report_status: status, admin_comment: comment }),
+    });
+    loadReports();
+  } catch(e) { alert(e.message); }
+}
+
+function showPhoto(url) {
+  const modal = document.createElement('div');
+  modal.className = 'report-img-modal';
+  modal.innerHTML = `<img src="${url}" />`;
+  modal.addEventListener('click', () => modal.remove());
+  document.body.appendChild(modal);
+}
+</script>
+</body>
+</html>

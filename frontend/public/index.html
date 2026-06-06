@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#2d7a4f" />
+  <meta name="description" content="Biodiversity Reporting PWA for Kg Sungai Timun" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <title>BioReport – Kg Sungai Timun</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- App CSS -->
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+
+<!-- ===== AUTH SCREEN ===== -->
+<div id="auth-screen" class="screen active">
+  <div class="auth-container">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">🌿</div>
+      <h1>BioReport</h1>
+      <p>Kg Sungai Timun Biodiversity</p>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="login">Login</button>
+      <button class="auth-tab" data-tab="register">Register</button>
+    </div>
+    <form id="login-form" class="auth-form active">
+      <input type="email" id="login-email" placeholder="Email" required autocomplete="email" />
+      <input type="password" id="login-password" placeholder="Password" required />
+      <button type="submit" class="btn-primary">Login</button>
+      <p id="login-error" class="error-msg"></p>
+    </form>
+    <form id="register-form" class="auth-form">
+      <input type="text" id="reg-username" placeholder="Username" required />
+      <input type="email" id="reg-email" placeholder="Email" required />
+      <input type="password" id="reg-password" placeholder="Password (min 6 chars)" required minlength="6" />
+      <select id="reg-type">
+        <option value="villager">Villager</option>
+        <option value="tourist">Tourist</option>
+      </select>
+      <button type="submit" class="btn-primary">Create Account</button>
+      <p id="register-error" class="error-msg"></p>
+    </form>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="app-screen" class="screen">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <span class="topbar-title">🌿 BioReport</span>
+    <div class="topbar-right">
+      <span id="offline-badge" class="badge-offline hidden">OFFLINE</span>
+      <span id="user-points" class="points-chip">0 pts</span>
+      <button id="btn-profile" class="icon-btn" title="Profile">👤</button>
+    </div>
+  </header>
+
+  <!-- PAGE CONTAINERS -->
+  <main class="main-content">
+
+    <!-- MAP PAGE -->
+    <div id="page-map" class="page active">
+      <div id="map"></div>
+      <div class="map-controls">
+        <button id="btn-locate" class="map-fab" title="My location">📍</button>
+      </div>
+      <div id="map-legend" class="map-legend">
+        <span class="legend-item birds">Birds</span>
+        <span class="legend-item reptiles">Reptiles</span>
+        <span class="legend-item plants">Plants</span>
+        <span class="legend-item aquatic">Aquatic</span>
+      </div>
+    </div>
+
+    <!-- REPORT PAGE -->
+    <div id="page-report" class="page">
+      <div class="page-header">
+        <h2>New Sighting</h2>
+        <span id="sync-status" class="sync-chip">Online</span>
+      </div>
+      <form id="report-form" class="report-form" novalidate>
+        <div class="form-group">
+          <label>Category *</label>
+          <select id="report-category" required>
+            <option value="">Select category</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Species *</label>
+          <select id="report-species" required>
+            <option value="">Select species</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Location *</label>
+          <div class="location-row">
+            <input type="number" id="report-lat" placeholder="Latitude" step="any" readonly />
+            <input type="number" id="report-lng" placeholder="Longitude" step="any" readonly />
+            <button type="button" id="btn-get-gps" class="btn-secondary">📍 GPS</button>
+          </div>
+          <input type="text" id="report-placename" placeholder="Or enter place name (e.g. jetty near fish farm)" />
+        </div>
+        <div class="form-group">
+          <label>Photo</label>
+          <div class="photo-area" id="photo-area">
+            <input type="file" id="report-photo" accept="image/*" capture="environment" />
+            <div class="photo-placeholder" id="photo-placeholder">📷 Tap to capture photo</div>
+            <img id="photo-preview" class="photo-preview hidden" alt="Preview" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="report-notes" rows="3" placeholder="Additional observations..."></textarea>
+        </div>
+        <p id="report-error" class="error-msg"></p>
+        <p id="report-success" class="success-msg hidden"></p>
+        <button type="submit" class="btn-primary btn-full" id="btn-submit-report">Submit Sighting</button>
+        <p class="offline-note" id="offline-note hidden">Will be saved offline and synced when connected.</p>
+      </form>
+    </div>
+
+    <!-- DASHBOARD PAGE -->
+    <div id="page-dashboard" class="page">
+      <div class="page-header"><h2>Dashboard</h2></div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-num" id="stat-total">—</div><div class="stat-label">Total Sightings</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-verified">—</div><div class="stat-label">Verified</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-observers">—</div><div class="stat-label">Observers</div></div>
+        <div class="stat-card sdg14"><div class="stat-num" id="stat-sdg14">—</div><div class="stat-label">SDG 14 (Aquatic)</div></div>
+      </div>
+      <div class="chart-section">
+        <h3>By Category</h3>
+        <div id="category-chart" class="bar-chart"></div>
+      </div>
+      <div class="chart-section">
+        <h3>Triple Helix</h3>
+        <div id="triple-helix" class="triple-helix-grid"></div>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD PAGE -->
+    <div id="page-leaderboard" class="page">
+      <div class="page-header"><h2>Leaderboard</h2></div>
+      <ol id="leaderboard-list" class="leaderboard-list"></ol>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div id="page-profile" class="page">
+      <div class="page-header">
+        <h2>My Profile</h2>
+        <button id="btn-logout" class="btn-text">Logout</button>
+      </div>
+      <div class="profile-card">
+        <div class="profile-avatar">🌿</div>
+        <h3 id="profile-name">—</h3>
+        <span id="profile-type" class="type-badge">—</span>
+        <div class="profile-stats">
+          <div><strong id="profile-points">0</strong><small>Points</small></div>
+          <div><strong id="profile-reports">0</strong><small>Verified</small></div>
+        </div>
+      </div>
+      <div class="badges-section">
+        <h3>Badges</h3>
+        <div id="badges-container" class="badges-grid"></div>
+      </div>
+      <div class="pending-section">
+        <h3>Offline Queue <span id="pending-count" class="count-chip">0</span></h3>
+        <button id="btn-force-sync" class="btn-secondary btn-full">Sync Now</button>
+      </div>
+      <div class="my-records-section">
+        <h3>My Records</h3>
+        <div class="record-filter-row">
+          <button class="filter-chip active" data-status="">All</button>
+          <button class="filter-chip" data-status="pending">Pending</button>
+          <button class="filter-chip" data-status="verified">Verified</button>
+          <button class="filter-chip" data-status="rejected">Rejected</button>
+        </div>
+        <div id="my-reports-list"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-page="map">🗺️<span>Map</span></button>
+    <button class="nav-btn" data-page="report">➕<span>Report</span></button>
+    <button class="nav-btn" data-page="dashboard">📊<span>Stats</span></button>
+    <button class="nav-btn" data-page="leaderboard">🏆<span>Rank</span></button>
+    <button class="nav-btn" data-page="profile">👤<span>Profile</span></button>
+  </nav>
+
+  <!-- FLOATING CHAT -->
+  <div id="chat-fab" class="chat-fab">💬</div>
+  <div id="chat-panel" class="chat-panel hidden">
+    <div class="chat-header">
+      <span>Community Chat</span>
+      <button id="chat-close">✕</button>
+    </div>
+    <div id="chat-messages" class="chat-messages"></div>
+    <form id="chat-form" class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off" />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+</div>
+
+<!-- ===== OFFLINE PAGE (standalone) ===== -->
+<div id="offline-screen" class="screen hidden">
+  <div class="center-content">
+    <div style="font-size:4rem">📡</div>
+    <h2>You're Offline</h2>
+    <p>Your sightings are saved and will sync when connected.</p>
+  </div>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Socket.io client -->
+<script src="/socket.io/socket.io.js"></script>
+<!-- App scripts -->
+<script src="/js/db.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/map.js"></script>
+<script src="/js/report.js"></script>
+<script src="/js/chat.js"></script>
+<script src="/js/gamification.js"></script>
+<script src="/js/app.js"></script>
+
+</body>
+</html>
