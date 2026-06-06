@@ -274,10 +274,60 @@ h1, h2, h3, h4,
 .report-item-info strong { display: block; font-size: .9rem; }
 .report-item-info small { display: block; color: var(--text-light); font-size: .75rem; margin-top: .15rem; }
 
-@media (min-width: 768px) {
-  .main-content { max-width: 480px; left: 50%; transform: translateX(-50%); }
-  .bottom-nav   { max-width: 480px; left: 50%; transform: translateX(-50%); }
-  .topbar       { max-width: 480px; left: 50%; transform: translateX(-50%); }
+/* ============================================================
+   RESPONSIVE — tablet & desktop
+   ============================================================ */
+#page-map.page { padding: 0; }   /* map is always full-bleed */
+
+/* Tablet — roomier content, multi-column grids, centred reading width */
+@media (min-width: 640px) {
+  .stats-grid { grid-template-columns: repeat(4, 1fr); }
+  #page-report.page, #page-dashboard.page,
+  #page-leaderboard.page, #page-profile.page {
+    padding-left:  max(1rem, calc((100% - 720px) / 2));
+    padding-right: max(1rem, calc((100% - 720px) / 2));
+  }
+}
+
+/* Desktop — left sidebar navigation replaces the bottom bar */
+@media (min-width: 1024px) {
+  :root { --sidebar-w: 232px; }
+
+  .main-content { left: var(--sidebar-w); bottom: 0; }
+
+  .bottom-nav {
+    flex-direction: column; justify-content: flex-start;
+    top: var(--topbar-h); bottom: 0; left: 0; right: auto;
+    width: var(--sidebar-w); height: auto;
+    border-top: none; border-right: 1px solid rgba(122,92,62,.35);
+    box-shadow: 2px 0 10px rgba(60,46,28,.06);
+    padding: .8rem .6rem; gap: .25rem;
+  }
+  .nav-btn {
+    flex: none; flex-direction: row; justify-content: flex-start;
+    gap: .8rem; width: 100%; padding: .72rem .95rem; border-radius: 9px;
+    font-size: .9rem;
+  }
+  .nav-btn span { font-size: .82rem; text-transform: none; letter-spacing: .2px; }
+  .nav-btn .icon { width: 20px; height: 20px; }
+  .nav-btn.active { background: var(--green-pale); color: var(--green-dark); }
+  .nav-btn.active::after { display: none; }
+  .nav-btn:hover { background: rgba(107,142,78,.12); }
+
+  #page-report.page, #page-dashboard.page,
+  #page-leaderboard.page, #page-profile.page {
+    padding-left:  max(1.5rem, calc((100% - 880px) / 2));
+    padding-right: max(1.5rem, calc((100% - 880px) / 2));
+  }
+
+  /* chat no longer sits above a bottom bar */
+  .chat-fab   { bottom: 1.25rem; }
+  .chat-panel { bottom: 5.5rem; }
+}
+
+/* Large desktop — wider dashboard grid */
+@media (min-width: 1440px) {
+  #page-dashboard.page { padding-left: max(2rem, calc((100% - 1040px) / 2)); padding-right: max(2rem, calc((100% - 1040px) / 2)); }
 }
 
 /* ============================================================
@@ -347,6 +397,9 @@ h1, h2, h3, h4,
 .chat-fab .icon { width: 26px; height: 26px; }
 .map-fab { border: 1px solid rgba(122,92,62,.3); color: var(--green-dark); }
 .map-fab .icon { width: 22px; height: 22px; }
+.map-fab:hover { background: var(--green-pale); }
+.map-fab.locating { opacity: .55; pointer-events: none; }
+.map-fab.locating .icon { animation: iconspin .8s linear infinite; }
 
 /* Leaderboard — ranked medals */
 .lb-rank { display: flex; align-items: center; justify-content: center; }

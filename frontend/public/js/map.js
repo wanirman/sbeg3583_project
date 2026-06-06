@@ -31,16 +31,25 @@ const BioMap = (() => {
     return map;
   }
 
-  // Centre the map on the user's current GPS position and show a "you are here" marker
-  function locateUser(pan = true) {
+  // Centre the map on the user's current GPS position and show a "you are here" marker.
+  // `zoom` controls how close to zoom; when `animate` is true we fly there smoothly.
+  function locateUser(zoom = 16, animate = false) {
     if (!navigator.geolocation || !map) return;
+    const btn = document.getElementById('btn-locate');
+    if (btn) btn.classList.add('locating');
     navigator.geolocation.getCurrentPosition(
       pos => {
         const { latitude: lat, longitude: lng, accuracy } = pos.coords;
         showUserLocation(lat, lng, accuracy);
-        if (pan) map.setView([lat, lng], 16);
+        if (animate) map.flyTo([lat, lng], zoom, { duration: 1.1 });
+        else map.setView([lat, lng], zoom);
+        if (btn) btn.classList.remove('locating');
       },
-      err => console.warn('Geolocation unavailable, staying at default view:', err.message),
+      err => {
+        console.warn('Geolocation unavailable, staying at default view:', err.message);
+        if (btn) btn.classList.remove('locating');
+        if (animate) alert('Could not get your location: ' + err.message);
+      },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
   }

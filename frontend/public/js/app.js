@@ -178,9 +178,9 @@
     BioGamification.updatePendingCount();
   });
 
-  // Locate button on map — recentre on current location and show the marker
+  // Locate button on map — smoothly zoom to the user's current location
   document.getElementById('btn-locate').addEventListener('click', () => {
-    BioMap.locateUser();
+    BioMap.locateUser(17, true);
   });
 
   // Logout
