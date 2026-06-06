@@ -28,6 +28,7 @@ app.use('/api/sighting',  require('./routes/sightings'));
 app.use('/api/chat',      require('./routes/chat'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/admin',     require('./routes/admin'));
+app.use('/api/external',  require('./routes/external'));
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
 // SPA fallback — serves index.html for any non-API, non-file route

@@ -90,6 +90,38 @@ const BioAPI = (() => {
     return request('POST', '/chat', { message_text, sighting_ref_id, timestamp: new Date().toISOString() });
   }
 
+  // ── iNaturalist integration ──
+  // Species autocomplete — calls iNaturalist directly (keyless, CORS-enabled)
+  async function searchTaxa(query) {
+    if (!query || query.trim().length < 2) return [];
+    const url = `https://api.inaturalist.org/v1/taxa/autocomplete?q=${encodeURIComponent(query)}&per_page=8&locale=en`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('iNaturalist search failed');
+    const data = await res.json();
+    return (data.results || []).map(t => ({
+      inat_taxon_id:     t.id,
+      scientific_name:   t.name,
+      species_name:      t.preferred_common_name || t.name,
+      iconic_taxon_name: t.iconic_taxon_name,
+      default_photo_url: t.default_photo?.square_url || '',
+      rank:              t.rank,
+    }));
+  }
+
+  // Bridge an iNaturalist taxon to a local species_id (find-or-create on the server)
+  async function resolveSpecies(taxon) {
+    return request('POST', '/external/resolve-species', taxon);
+  }
+
+  // Identify species from a photo via the backend CV proxy
+  async function identifyPhoto(blob, lat, lng) {
+    const fd = new FormData();
+    fd.append('photo', blob, `id_${Date.now()}.jpg`);
+    if (lat) fd.append('lat', lat);
+    if (lng) fd.append('lng', lng);
+    return request('POST', '/external/identify', fd, true);
+  }
+
   async function geocodePlacename(query) {
     const cached = await BioDB.getCachedGeocode(query);
     if (cached) return cached;
@@ -105,7 +137,7 @@ const BioAPI = (() => {
     return null;
   }
 
-  return { getToken, setToken, clearToken, getUser, setUser, login, register, getProfile, submitSighting, syncBatch, getSightingsGeoJSON, getCategories, getSpecies, getDashboardStats, getLeaderboard, getTripleHelix, getMyReports, getChatMessages, postChatMessage, geocodePlacename };
+  return { getToken, setToken, clearToken, getUser, setUser, login, register, getProfile, submitSighting, syncBatch, getSightingsGeoJSON, getCategories, getSpecies, getDashboardStats, getLeaderboard, getTripleHelix, getMyReports, getChatMessages, postChatMessage, geocodePlacename, searchTaxa, resolveSpecies, identifyPhoto };
 })();
 
 window.BioAPI = BioAPI;

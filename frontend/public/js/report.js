@@ -1,6 +1,8 @@
 /* Report form logic — GPS, photo compression, submit, offline queue */
 const BioReport = (() => {
   let compressedBlob = null;
+  let searchTimer = null;
+  let currentSuggestions = [];
 
   async function init() {
     await loadCategories();
@@ -26,6 +28,153 @@ const BioReport = (() => {
     document.getElementById('report-photo').addEventListener('change', onPhotoSelected);
     document.getElementById('report-form').addEventListener('submit', onSubmit);
     document.getElementById('report-placename').addEventListener('blur', onPlacenameBlur);
+    document.getElementById('taxa-search-input').addEventListener('input', onTaxaInput);
+    document.getElementById('btn-identify').addEventListener('click', onIdentify);
+    // Close the suggestions dropdown when clicking outside it
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.taxa-search')) hideSuggestions();
+    });
+  }
+
+  /* ── iNaturalist species autocomplete ── */
+  function onTaxaInput(e) {
+    const q = e.target.value.trim();
+    clearTimeout(searchTimer);
+    if (q.length < 2) { hideSuggestions(); return; }
+    searchTimer = setTimeout(() => doTaxaSearch(q), 350);
+  }
+
+  async function doTaxaSearch(q) {
+    if (!navigator.onLine) return;
+    try {
+      currentSuggestions = await BioAPI.searchTaxa(q);
+      renderSuggestions();
+    } catch { hideSuggestions(); }
+  }
+
+  function renderSuggestions() {
+    const box = document.getElementById('taxa-suggestions');
+    if (!currentSuggestions.length) { hideSuggestions(); return; }
+    box.innerHTML = '';
+    currentSuggestions.forEach((t, i) => {
+      const item = document.createElement('div');
+      item.className = 'taxa-item';
+      const thumb = t.default_photo_url
+        ? `<img src="${t.default_photo_url}" class="taxa-thumb" alt="" />`
+        : `<div class="taxa-thumb taxa-thumb-empty">🔍</div>`;
+      item.innerHTML = `
+        ${thumb}
+        <div class="taxa-item-text">
+          <strong>${escapeHTML(t.species_name)}</strong>
+          <small><em>${escapeHTML(t.scientific_name)}</em>${t.iconic_taxon_name ? ` · ${escapeHTML(t.iconic_taxon_name)}` : ''}</small>
+        </div>
+      `;
+      item.addEventListener('click', () => pickTaxon(i));
+      box.appendChild(item);
+    });
+    box.classList.remove('hidden');
+  }
+
+  function hideSuggestions() {
+    const box = document.getElementById('taxa-suggestions');
+    if (box) box.classList.add('hidden');
+  }
+
+  async function pickTaxon(index) {
+    const taxon = currentSuggestions[index];
+    if (!taxon) return;
+    hideSuggestions();
+    document.getElementById('taxa-search-input').value = taxon.species_name;
+    try {
+      const resolved = await BioAPI.resolveSpecies(taxon);
+      applyResolvedSpecies(resolved);
+    } catch (e) {
+      alert('Could not set species: ' + (e.message || 'error'));
+    }
+  }
+
+  // Add an <option> to a <select> if it isn't already present
+  function ensureOption(select, value, label) {
+    if (![...select.options].some(o => o.value === String(value))) {
+      const opt = document.createElement('option');
+      opt.value = value; opt.textContent = label;
+      select.appendChild(opt);
+    }
+  }
+
+  // Fill the category + species selects from a resolved (local) species record
+  function applyResolvedSpecies(r) {
+    const catSel = document.getElementById('report-category');
+    const spSel  = document.getElementById('report-species');
+    ensureOption(catSel, r.category_id, r.category_name || 'Category');
+    catSel.value = r.category_id;
+    const label = r.species_name + (r.scientific_name ? ` (${r.scientific_name})` : '');
+    ensureOption(spSel, r.species_id, label);
+    spSel.value = r.species_id;
+
+    const success = document.getElementById('report-success');
+    success.textContent = `✅ Selected: ${r.species_name}`;
+    success.classList.remove('hidden');
+    setTimeout(() => success.classList.add('hidden'), 2500);
+  }
+
+  /* ── iNaturalist photo identification ── */
+  async function onIdentify() {
+    if (!compressedBlob) { alert('Please choose a photo first.'); return; }
+    if (!navigator.onLine) { alert('Photo ID needs an internet connection.'); return; }
+    const btn = document.getElementById('btn-identify');
+    const box = document.getElementById('identify-results');
+    btn.disabled = true; btn.textContent = '⏳ Identifying…';
+    box.classList.add('hidden');
+
+    const lat = document.getElementById('report-lat').value;
+    const lng = document.getElementById('report-lng').value;
+    try {
+      const { suggestions } = await BioAPI.identifyPhoto(compressedBlob, lat, lng);
+      renderIdentifyResults(suggestions || []);
+    } catch (e) {
+      box.classList.remove('hidden');
+      box.innerHTML = `<p class="field-hint" style="color:#c0392b">${escapeHTML(e.message || 'Identification failed.')}</p>`;
+    }
+    btn.disabled = false; btn.textContent = '🔍 Identify species from this photo';
+  }
+
+  function renderIdentifyResults(suggestions) {
+    const box = document.getElementById('identify-results');
+    box.classList.remove('hidden');
+    if (!suggestions.length) {
+      box.innerHTML = '<p class="field-hint">No confident matches. Try a clearer photo or search by name.</p>';
+      return;
+    }
+    box.innerHTML = '<p class="field-hint">Top matches — tap to use:</p>';
+    suggestions.forEach((s, i) => {
+      const item = document.createElement('div');
+      item.className = 'taxa-item';
+      const thumb = s.default_photo_url
+        ? `<img src="${s.default_photo_url}" class="taxa-thumb" alt="" />`
+        : `<div class="taxa-thumb taxa-thumb-empty">📷</div>`;
+      item.innerHTML = `
+        ${thumb}
+        <div class="taxa-item-text">
+          <strong>${escapeHTML(s.species_name)}</strong>
+          <small><em>${escapeHTML(s.scientific_name)}</em></small>
+        </div>
+        <span class="taxa-score">${s.score || ''}</span>
+      `;
+      // Reuse the resolve flow by stashing into currentSuggestions
+      item.addEventListener('click', async () => {
+        try {
+          const resolved = await BioAPI.resolveSpecies(s);
+          applyResolvedSpecies(resolved);
+          box.classList.add('hidden');
+        } catch (e) { alert('Could not set species: ' + (e.message || 'error')); }
+      });
+      box.appendChild(item);
+    });
+  }
+
+  function escapeHTML(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
   async function onCategoryChange(e) {
@@ -80,6 +229,7 @@ const BioReport = (() => {
       preview.src = url;
       preview.classList.remove('hidden');
       placeholder.classList.add('hidden');
+      document.getElementById('btn-identify').classList.remove('hidden');
     });
   }
 
@@ -178,9 +328,14 @@ const BioReport = (() => {
   function resetForm() {
     document.getElementById('report-form').reset();
     compressedBlob = null;
+    currentSuggestions = [];
     document.getElementById('photo-preview').classList.add('hidden');
     document.getElementById('photo-placeholder').classList.remove('hidden');
     document.getElementById('report-species').innerHTML = '<option value="">Select species</option>';
+    document.getElementById('taxa-search-input').value = '';
+    hideSuggestions();
+    document.getElementById('btn-identify').classList.add('hidden');
+    document.getElementById('identify-results').classList.add('hidden');
   }
 
   return { init };

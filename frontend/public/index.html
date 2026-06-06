@@ -88,6 +88,14 @@
       </div>
       <form id="report-form" class="report-form" novalidate>
         <div class="form-group">
+          <label>🔍 Identify species (iNaturalist)</label>
+          <div class="taxa-search">
+            <input type="text" id="taxa-search-input" placeholder="Type a name, e.g. kingfisher, monitor lizard…" autocomplete="off" />
+            <div id="taxa-suggestions" class="taxa-suggestions hidden"></div>
+          </div>
+          <small class="field-hint">Search the global species database to auto-fill the fields below — or pick manually.</small>
+        </div>
+        <div class="form-group">
           <label>Category *</label>
           <select id="report-category" required>
             <option value="">Select category</option>
@@ -115,6 +123,8 @@
             <div class="photo-placeholder" id="photo-placeholder">📷 Tap to capture photo</div>
             <img id="photo-preview" class="photo-preview hidden" alt="Preview" />
           </div>
+          <button type="button" id="btn-identify" class="btn-secondary btn-full hidden" style="margin-top:.5rem">🔍 Identify species from this photo</button>
+          <div id="identify-results" class="identify-results hidden"></div>
         </div>
         <div class="form-group">
           <label>Notes</label>
