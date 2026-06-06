@@ -1,5 +1,6 @@
 const Species  = require('../models/Species');
 const Category = require('../models/Category');
+const inatAuth = require('../services/inatAuth');
 
 const INAT_API = 'https://api.inaturalist.org/v1';
 
@@ -81,30 +82,55 @@ async function resolveSpecies(req, res) {
 /* ── Identify species from a photo via iNaturalist computer vision ──
    POST /api/external/identify  (multipart: photo, optional lat, lng)
    Requires INAT_API_TOKEN in env (the token is never exposed to the client). */
+// Build the multipart body once; it can be re-sent on a token retry
+function buildCvForm(req) {
+  const form = new FormData();
+  const blob = new Blob([req.file.buffer], { type: req.file.mimetype || 'image/jpeg' });
+  form.append('image', blob, req.file.originalname || 'photo.jpg');
+  if (req.body.lat) form.append('lat', req.body.lat);
+  if (req.body.lng) form.append('lng', req.body.lng);
+  return form;
+}
+
+async function scoreImage(req, token) {
+  return fetch(`${INAT_API}/computervision/score_image`, {
+    method: 'POST',
+    headers: { Authorization: token },
+    body: buildCvForm(req),
+  });
+}
+
 async function identifyPhoto(req, res) {
   try {
-    const token = process.env.INAT_API_TOKEN;
-    if (!token) {
-      return res.status(503).json({ error: 'Photo identification is not configured on the server.' });
-    }
     if (!req.file) {
       return res.status(422).json({ error: 'A photo is required.' });
     }
 
-    const form = new FormData();
-    const blob = new Blob([req.file.buffer], { type: req.file.mimetype || 'image/jpeg' });
-    form.append('image', blob, req.file.originalname || 'photo.jpg');
-    if (req.body.lat) form.append('lat', req.body.lat);
-    if (req.body.lng) form.append('lng', req.body.lng);
+    let token;
+    try {
+      token = await inatAuth.getApiToken();
+    } catch (e) {
+      return res.status(502).json({ error: 'iNaturalist authentication failed: ' + e.message });
+    }
+    if (!token) {
+      return res.status(503).json({ error: 'Photo identification is not configured on the server.' });
+    }
 
-    const inatRes = await fetch(`${INAT_API}/computervision/score_image`, {
-      method: 'POST',
-      headers: { Authorization: token },
-      body: form,
-    });
+    let inatRes = await scoreImage(req, token);
+
+    // Token may have expired right at the boundary — refresh once and retry
+    if (inatRes.status === 401) {
+      inatAuth.invalidate();
+      try {
+        const fresh = await inatAuth.getApiToken();
+        if (fresh) inatRes = await scoreImage(req, fresh);
+      } catch (e) {
+        return res.status(502).json({ error: 'iNaturalist token refresh failed: ' + e.message });
+      }
+    }
 
     if (inatRes.status === 401) {
-      return res.status(502).json({ error: 'iNaturalist token expired or invalid. Admin must refresh INAT_API_TOKEN.' });
+      return res.status(502).json({ error: 'iNaturalist rejected the token. Check OAuth credentials.' });
     }
     if (!inatRes.ok) {
       return res.status(502).json({ error: `iNaturalist returned ${inatRes.status}` });
@@ -126,4 +152,9 @@ async function identifyPhoto(req, res) {
   }
 }
 
-module.exports = { resolveSpecies, identifyPhoto };
+// Report whether photo-ID is configured and the token's remaining validity
+function inatStatus(req, res) {
+  return res.json(inatAuth.status());
+}
+
+module.exports = { resolveSpecies, identifyPhoto, inatStatus };

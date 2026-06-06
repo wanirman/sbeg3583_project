@@ -1,7 +1,7 @@
 const express = require('express');
 const multer  = require('multer');
 const { authenticate } = require('../middleware/auth');
-const { resolveSpecies, identifyPhoto } = require('../controllers/externalController');
+const { resolveSpecies, identifyPhoto, inatStatus } = require('../controllers/externalController');
 
 const router = express.Router();
 
@@ -13,5 +13,6 @@ const memUpload = multer({
 
 router.post('/resolve-species', authenticate, resolveSpecies);
 router.post('/identify',        authenticate, memUpload.single('photo'), identifyPhoto);
+router.get('/inat-status',      authenticate, inatStatus);
 
 module.exports = router;
