@@ -1,6 +1,10 @@
 /* Leaflet map initialisation and sighting overlay */
 const BioMap = (() => {
   let map = null;
+  let userMarker = null;
+  let accuracyCircle = null;
+  const DEFAULT_CENTER = [2.2, 102.2];   // Kg Sungai Timun area — fallback if location denied
+  const DEFAULT_ZOOM   = 13;
   const categoryColors = { Birds: '#f9a825', Reptiles: '#e91e63', Plants: '#43a047', Aquatic: '#1e88e5' };
 
   function createMarkerIcon(categoryName) {
@@ -14,7 +18,8 @@ const BioMap = (() => {
   }
 
   function init() {
-    map = L.map('map', { zoomControl: true }).setView([2.2, 102.2], 13);
+    // Start at the fallback area, then recentre on the user's real location once allowed
+    map = L.map('map', { zoomControl: true }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
@@ -22,7 +27,52 @@ const BioMap = (() => {
     }).addTo(map);
 
     loadSightings();
+    locateUser();   // ask for current location and centre there
     return map;
+  }
+
+  // Centre the map on the user's current GPS position and show a "you are here" marker
+  function locateUser(pan = true) {
+    if (!navigator.geolocation || !map) return;
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+        showUserLocation(lat, lng, accuracy);
+        if (pan) map.setView([lat, lng], 16);
+      },
+      err => console.warn('Geolocation unavailable, staying at default view:', err.message),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+    );
+  }
+
+  // Draw/update the blue location dot and accuracy circle
+  function showUserLocation(lat, lng, accuracy) {
+    if (!map) return;
+    const latlng = [lat, lng];
+
+    if (userMarker) {
+      userMarker.setLatLng(latlng);
+    } else {
+      userMarker = L.marker(latlng, {
+        icon: L.divIcon({
+          className: '',
+          html: '<div class="user-loc-dot"></div>',
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+        }),
+        zIndexOffset: 1000,
+      }).addTo(map).bindPopup('You are here');
+    }
+
+    if (accuracy) {
+      if (accuracyCircle) {
+        accuracyCircle.setLatLng(latlng).setRadius(accuracy);
+      } else {
+        accuracyCircle = L.circle(latlng, {
+          radius: accuracy, color: '#1e88e5', fillColor: '#1e88e5', fillOpacity: 0.12, weight: 1,
+        }).addTo(map);
+      }
+    }
   }
 
   async function loadSightings() {
@@ -59,7 +109,7 @@ const BioMap = (() => {
 
   function getMap() { return map; }
 
-  return { init, loadSightings, panTo, getMap };
+  return { init, loadSightings, panTo, getMap, locateUser };
 })();
 
 window.BioMap = BioMap;

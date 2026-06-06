@@ -178,12 +178,9 @@
     BioGamification.updatePendingCount();
   });
 
-  // Locate button on map
+  // Locate button on map — recentre on current location and show the marker
   document.getElementById('btn-locate').addEventListener('click', () => {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(pos => {
-      BioMap.panTo(pos.coords.latitude, pos.coords.longitude);
-    });
+    BioMap.locateUser();
   });
 
   // Logout
