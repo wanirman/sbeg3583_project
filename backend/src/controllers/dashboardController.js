@@ -67,7 +67,7 @@ async function getLeaderboard(req, res) {
 async function getCategories(req, res) {
   try {
     const categories = await Category.find().sort({ category_name: 1 }).lean();
-    return res.json({ categories: categories.map(c => ({ category_id: c._id, category_name: c.category_name, description: c.description })) });
+    return res.json({ categories: categories.map(c => ({ category_id: c._id, category_name: c.category_name, description: c.description, icon: c.icon || '', sdg_goal: c.sdg_goal || '' })) });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

@@ -6,26 +6,65 @@
   <title>Admin – BioReport</title>
   <link rel="stylesheet" href="/css/app.css" />
   <style>
-    body { overflow: auto; background: #f4f7f5; font-family: -apple-system, sans-serif; }
-    .admin-wrap { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+    body { overflow: auto; background: #f4f7f5; font-family: -apple-system, sans-serif; margin: 0; }
     .admin-header { background: #1a3c2e; color: white; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
-    .admin-header h1 { font-size: 1.2rem; }
-    .filter-row { display: flex; gap: .5rem; margin-bottom: 1rem; flex-wrap: wrap; }
-    .filter-row select, .filter-row button { padding: .5rem .9rem; border-radius: 8px; border: 1.5px solid #ddd; font-size: .9rem; cursor: pointer; }
-    .filter-row button { background: #2d7a4f; color: white; border-color: #2d7a4f; }
-    .thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; cursor: pointer; }
-    .action-btns { display: flex; gap: .4rem; }
+    .admin-header h1 { font-size: 1.2rem; margin: 0; }
+    .admin-wrap { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
+
+    /* Tabs */
+    .admin-tabs { display: flex; gap: 0; border-bottom: 2px solid #dde; margin-bottom: 1.5rem; overflow-x: auto; }
+    .admin-tab { padding: .6rem 1.2rem; border: none; background: none; cursor: pointer; font-size: .9rem; color: #555; white-space: nowrap; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+    .admin-tab.active { color: #2d7a4f; border-bottom-color: #2d7a4f; font-weight: 600; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Login */
+    #login-panel { max-width: 320px; margin: 5rem auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.1); }
+    #login-panel h2 { margin: 0 0 1rem; }
+    #login-panel input { width: 100%; box-sizing: border-box; padding: .7rem; border: 1.5px solid #ddd; border-radius: 8px; margin-bottom: .7rem; font-size: 1rem; }
+
+    /* Table */
+    .admin-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    .admin-table th { background: #eef2ef; padding: .55rem .7rem; text-align: left; font-weight: 600; border-bottom: 2px solid #cdd; }
+    .admin-table td { padding: .5rem .7rem; border-bottom: 1px solid #eee; vertical-align: middle; }
+    .admin-table tr:hover td { background: #f9fbf9; }
+    .thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; cursor: pointer; }
+    .action-btns { display: flex; gap: .4rem; flex-wrap: wrap; }
     .btn-verify  { background: #2d7a4f; color: white; border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .8rem; }
     .btn-reject  { background: #e53935; color: white; border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .8rem; }
-    #login-panel { max-width: 320px; margin: 5rem auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.1); }
-    #login-panel h2 { margin-bottom: 1rem; }
-    #login-panel input { width: 100%; padding: .7rem; border: 1.5px solid #ddd; border-radius: 8px; margin-bottom: .7rem; font-size: 1rem; }
+    .btn-edit    { background: #1565c0; color: white; border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .8rem; }
+    .btn-del     { background: #c62828; color: white; border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .8rem; }
+    .btn-save    { background: #2d7a4f; color: white; border: none; padding: .3rem .8rem; border-radius: 6px; cursor: pointer; font-size: .85rem; }
+    .btn-cancel  { background: #888; color: white; border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .85rem; }
+
+    /* Filter row */
+    .filter-row { display: flex; gap: .5rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+    .filter-row select, .filter-row button { padding: .5rem .9rem; border-radius: 8px; border: 1.5px solid #ddd; font-size: .9rem; cursor: pointer; background: white; }
+    .filter-row button.primary { background: #2d7a4f; color: white; border-color: #2d7a4f; }
+
+    /* Add form card */
+    .form-card { background: white; border-radius: 10px; padding: 1.2rem; margin-bottom: 1.5rem; box-shadow: 0 1px 6px rgba(0,0,0,.07); }
+    .form-card h3 { margin: 0 0 1rem; font-size: 1rem; color: #1a3c2e; }
+    .form-card label { display: block; font-size: .85rem; color: #555; margin-bottom: .2rem; margin-top: .6rem; }
+    .form-card input, .form-card select, .form-card textarea { width: 100%; box-sizing: border-box; padding: .55rem; border: 1.5px solid #ddd; border-radius: 7px; font-size: .9rem; }
+    .form-card .form-row { display: flex; gap: .7rem; flex-wrap: wrap; }
+    .form-card .form-row > div { flex: 1; min-width: 160px; }
+    .form-msg { font-size: .85rem; margin-top: .5rem; }
+
+    /* Stats cards */
+    .stats-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .stat-card-sm { flex: 1; min-width: 120px; background: white; border-radius: 10px; padding: 1rem; text-align: center; box-shadow: 0 1px 6px rgba(0,0,0,.07); }
+    .stat-card-sm .n { font-size: 2rem; font-weight: 700; color: #2d7a4f; }
+    .stat-card-sm .l { font-size: .8rem; color: #666; }
+
+    /* Photo modal */
     .report-img-modal { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: flex; align-items: center; justify-content: center; z-index: 999; }
     .report-img-modal img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
   </style>
 </head>
 <body>
 
+<!-- ===== LOGIN ===== -->
 <div id="login-panel">
   <h2>Admin Login</h2>
   <input type="email" id="admin-email" placeholder="Admin email" />
@@ -34,51 +73,170 @@
   <p id="login-err" class="error-msg"></p>
 </div>
 
+<!-- ===== ADMIN PANEL ===== -->
 <div id="admin-panel" style="display:none">
   <div class="admin-header">
     <h1>🌿 BioReport Admin</h1>
     <button class="btn-text" onclick="adminLogout()" style="color:#ccc">Logout</button>
   </div>
   <div class="admin-wrap">
-    <div class="filter-row">
-      <select id="filter-status" onchange="loadReports()">
-        <option value="pending">Pending</option>
-        <option value="verified">Verified</option>
-        <option value="rejected">Rejected</option>
-        <option value="">All</option>
-      </select>
-      <select id="filter-category" onchange="loadReports()">
-        <option value="">All Categories</option>
-      </select>
-      <button onclick="loadReports()">Refresh</button>
+
+    <!-- Tabs -->
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="switchTab('reports')">Reports</button>
+      <button class="admin-tab" onclick="switchTab('species')">Species</button>
+      <button class="admin-tab" onclick="switchTab('categories')">Categories</button>
+      <button class="admin-tab" onclick="switchTab('users')">Users</button>
+      <button class="admin-tab" onclick="switchTab('stats')">Stats</button>
     </div>
 
-    <div style="overflow-x:auto">
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>#</th><th>Photo</th><th>Species</th><th>Category</th>
-            <th>Observer</th><th>Location</th><th>Date</th><th>Status</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="reports-tbody"></tbody>
-      </table>
+    <!-- ===== REPORTS TAB ===== -->
+    <div id="tab-reports" class="tab-panel active">
+      <div class="filter-row">
+        <select id="filter-status" onchange="loadReports()">
+          <option value="pending">Pending</option>
+          <option value="verified">Verified</option>
+          <option value="rejected">Rejected</option>
+          <option value="">All</option>
+        </select>
+        <select id="filter-category" onchange="loadReports()">
+          <option value="">All Categories</option>
+        </select>
+        <button class="primary" onclick="loadReports()">Refresh</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Photo</th><th>Species</th><th>Category</th>
+              <th>Observer</th><th>Location</th><th>Date</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="reports-tbody"></tbody>
+        </table>
+      </div>
+      <div id="no-reports" style="text-align:center;color:#888;padding:2rem;display:none">No reports found.</div>
     </div>
-    <div id="no-reports" style="text-align:center;color:#888;padding:2rem;display:none">No reports found.</div>
-  </div>
-</div>
+
+    <!-- ===== SPECIES TAB ===== -->
+    <div id="tab-species" class="tab-panel">
+      <div class="form-card">
+        <h3>Add New Species</h3>
+        <div class="form-row">
+          <div>
+            <label>Category *</label>
+            <select id="sp-category"></select>
+          </div>
+          <div>
+            <label>Species Name *</label>
+            <input type="text" id="sp-name" placeholder="e.g. Common Kingfisher" />
+          </div>
+          <div>
+            <label>Scientific Name</label>
+            <input type="text" id="sp-scientific" placeholder="e.g. Alcedo atthis" />
+          </div>
+          <div>
+            <label>Description</label>
+            <input type="text" id="sp-desc" placeholder="Optional" />
+          </div>
+        </div>
+        <div style="margin-top:.8rem;display:flex;gap:.6rem;align-items:center">
+          <button class="btn-save" onclick="createSpecies()">Add Species</button>
+          <span id="sp-msg" class="form-msg"></span>
+        </div>
+      </div>
+      <div class="filter-row">
+        <select id="sp-filter-cat" onchange="loadSpecies()">
+          <option value="">All Categories</option>
+        </select>
+        <button class="primary" onclick="loadSpecies()">Refresh</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="admin-table" id="species-table">
+          <thead>
+            <tr><th>ID</th><th>Species Name</th><th>Scientific Name</th><th>Category</th><th>Description</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="species-tbody"></tbody>
+        </table>
+      </div>
+      <div id="no-species" style="text-align:center;color:#888;padding:2rem;display:none">No species found.</div>
+    </div>
+
+    <!-- ===== CATEGORIES TAB ===== -->
+    <div id="tab-categories" class="tab-panel">
+      <div class="form-card">
+        <h3>Add New Category</h3>
+        <div class="form-row">
+          <div>
+            <label>Category Name *</label>
+            <input type="text" id="cat-name" placeholder="e.g. Mammals" />
+          </div>
+          <div>
+            <label>Icon (emoji)</label>
+            <input type="text" id="cat-icon" placeholder="e.g. 🦌" maxlength="4" />
+          </div>
+          <div>
+            <label>SDG Goal</label>
+            <input type="text" id="cat-sdg" placeholder="e.g. SDG14" />
+          </div>
+        </div>
+        <div style="margin-top:.8rem;display:flex;gap:.6rem;align-items:center">
+          <button class="btn-save" onclick="createCategory()">Add Category</button>
+          <span id="cat-msg" class="form-msg"></span>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="admin-table">
+          <thead>
+            <tr><th>ID</th><th>Icon</th><th>Category Name</th><th>SDG Goal</th></tr>
+          </thead>
+          <tbody id="categories-tbody"></tbody>
+        </table>
+      </div>
+      <div id="no-cats" style="text-align:center;color:#888;padding:2rem;display:none">No categories found.</div>
+    </div>
+
+    <!-- ===== USERS TAB ===== -->
+    <div id="tab-users" class="tab-panel">
+      <div style="overflow-x:auto">
+        <table class="admin-table">
+          <thead>
+            <tr><th>#</th><th>Username</th><th>Email</th><th>Role</th><th>Points</th><th>Reports</th><th>Change Role</th></tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+      <div id="no-users" style="text-align:center;color:#888;padding:2rem;display:none">No users found.</div>
+      <span id="users-msg" class="form-msg" style="display:block;margin-top:.5rem"></span>
+    </div>
+
+    <!-- ===== STATS TAB ===== -->
+    <div id="tab-stats" class="tab-panel">
+      <div class="stats-row" id="admin-stats-row">
+        <div class="stat-card-sm"><div class="n" id="as-total">—</div><div class="l">Total Reports</div></div>
+        <div class="stat-card-sm"><div class="n" id="as-pending">—</div><div class="l">Pending</div></div>
+        <div class="stat-card-sm"><div class="n" id="as-verified">—</div><div class="l">Verified</div></div>
+        <div class="stat-card-sm"><div class="n" id="as-rejected">—</div><div class="l">Rejected</div></div>
+        <div class="stat-card-sm"><div class="n" id="as-users">—</div><div class="l">Users</div></div>
+        <div class="stat-card-sm"><div class="n" id="as-species">—</div><div class="l">Species</div></div>
+      </div>
+    </div>
+
+  </div><!-- admin-wrap -->
+</div><!-- admin-panel -->
 
 <script>
 const API = '/api';
 let adminToken = null;
 
+// ===== AUTH =====
 async function adminLogin() {
   const email = document.getElementById('admin-email').value;
   const pwd   = document.getElementById('admin-pwd').value;
   const err   = document.getElementById('login-err');
   err.textContent = '';
   try {
-    const res = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, password: pwd}) });
+    const res  = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, password: pwd}) });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
     if (data.user_type !== 'admin') throw new Error('Not an admin account');
@@ -98,20 +256,38 @@ function adminLogout() {
 
 async function apiFetch(path, opts = {}) {
   if (adminToken) opts.headers = { ...(opts.headers||{}), 'Authorization': `Bearer ${adminToken}` };
-  const res = await fetch(API + path, opts);
-  const data = await res.json();
+  const res  = await fetch(API + path, opts);
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'Error');
   return data;
 }
 
-async function loadCategories() {
-  const { categories } = await apiFetch('/dashboard/categories');
-  const sel = document.getElementById('filter-category');
-  categories.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.category_id; opt.textContent = c.category_name;
-    sel.appendChild(opt);
+// ===== TABS =====
+function switchTab(name) {
+  document.querySelectorAll('.admin-tab').forEach((t, i) => {
+    t.classList.toggle('active', t.textContent.toLowerCase() === name);
   });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+
+  if (name === 'reports')    loadReports();
+  if (name === 'species')    { loadSpeciesCategories(); loadSpecies(); }
+  if (name === 'categories') loadCategoryList();
+  if (name === 'users')      loadUsers();
+  if (name === 'stats')      loadStats();
+}
+
+// ===== REPORTS =====
+async function loadCategories() {
+  try {
+    const { categories } = await apiFetch('/dashboard/categories');
+    const sel = document.getElementById('filter-category');
+    categories.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.category_id; opt.textContent = c.category_name;
+      sel.appendChild(opt);
+    });
+  } catch {}
 }
 
 async function loadReports() {
@@ -121,39 +297,41 @@ async function loadReports() {
   if (status)   q += `&status=${status}`;
   if (category) q += `&category_id=${category}`;
 
-  const { sightings } = await apiFetch(`/sighting${q}`);
-  const tbody = document.getElementById('reports-tbody');
-  tbody.innerHTML = '';
+  try {
+    const { sightings } = await apiFetch(`/sighting${q}`);
+    const tbody = document.getElementById('reports-tbody');
+    tbody.innerHTML = '';
 
-  if (!sightings.length) {
-    document.getElementById('no-reports').style.display = 'block';
-    return;
-  }
-  document.getElementById('no-reports').style.display = 'none';
+    if (!sightings.length) {
+      document.getElementById('no-reports').style.display = 'block';
+      return;
+    }
+    document.getElementById('no-reports').style.display = 'none';
 
-  sightings.forEach(r => {
-    const tr = document.createElement('tr');
-    const photo = r.photo_url ? `<img class="thumb" src="${r.photo_url}" onclick="showPhoto('${r.photo_url}')" />` : '—';
-    const date = new Date(r.timestamp).toLocaleString('en-MY', {dateStyle:'short', timeStyle:'short'});
-    tr.innerHTML = `
-      <td>${r.report_id}</td>
-      <td>${photo}</td>
-      <td>${r.species_name}<br/><small style="color:#888">${r.scientific_name||''}</small></td>
-      <td>${r.category_name}</td>
-      <td>${r.user_name}</td>
-      <td><small>${r.latitude?.toFixed(4)}, ${r.longitude?.toFixed(4)}</small></td>
-      <td><small>${date}</small></td>
-      <td><span class="status-${r.report_status}">${r.report_status}</span></td>
-      <td>
-        <div class="action-btns">
-          ${r.report_status !== 'verified' ? `<button class="btn-verify" onclick="verify(${r.report_id},'verified')">✓ Verify</button>` : ''}
-          ${r.report_status !== 'rejected' ? `<button class="btn-reject" onclick="verify(${r.report_id},'rejected')">✗ Reject</button>` : ''}
-        </div>
-        <textarea id="comment-${r.report_id}" placeholder="Admin comment..." style="width:100%;font-size:.75rem;margin-top:.3rem;border:1px solid #ddd;border-radius:4px;padding:.3rem" rows="1"></textarea>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
+    sightings.forEach(r => {
+      const tr = document.createElement('tr');
+      const photo = r.photo_url ? `<img class="thumb" src="${r.photo_url}" onclick="showPhoto('${r.photo_url}')" />` : '—';
+      const date  = new Date(r.timestamp).toLocaleString('en-MY', {dateStyle:'short', timeStyle:'short'});
+      tr.innerHTML = `
+        <td>${r.report_id}</td>
+        <td>${photo}</td>
+        <td>${esc(r.species_name)}<br/><small style="color:#888">${esc(r.scientific_name||'')}</small></td>
+        <td>${esc(r.category_name)}</td>
+        <td>${esc(r.user_name)}</td>
+        <td><small>${(r.latitude||0).toFixed(4)}, ${(r.longitude||0).toFixed(4)}</small></td>
+        <td><small>${date}</small></td>
+        <td><span class="status-${r.report_status}">${r.report_status}</span></td>
+        <td>
+          <div class="action-btns">
+            ${r.report_status !== 'verified' ? `<button class="btn-verify" onclick="verify('${r.report_id}','verified')">✓ Verify</button>` : ''}
+            ${r.report_status !== 'rejected' ? `<button class="btn-reject" onclick="verify('${r.report_id}','rejected')">✗ Reject</button>` : ''}
+          </div>
+          <textarea id="comment-${r.report_id}" placeholder="Admin comment…" style="width:100%;font-size:.75rem;margin-top:.3rem;border:1px solid #ddd;border-radius:4px;padding:.3rem" rows="1"></textarea>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch(e) { alert('Failed to load reports: ' + e.message); }
 }
 
 async function verify(report_id, status) {
@@ -168,12 +346,259 @@ async function verify(report_id, status) {
   } catch(e) { alert(e.message); }
 }
 
+// ===== SPECIES =====
+let allCategories = [];
+
+async function loadSpeciesCategories() {
+  if (allCategories.length) return;
+  try {
+    const { categories } = await apiFetch('/dashboard/categories');
+    allCategories = categories;
+    const spCat   = document.getElementById('sp-category');
+    const spFilter = document.getElementById('sp-filter-cat');
+    spCat.innerHTML   = '<option value="">Select category</option>';
+    spFilter.innerHTML = '<option value="">All Categories</option>';
+    categories.forEach(c => {
+      [spCat, spFilter].forEach(sel => {
+        const opt = document.createElement('option');
+        opt.value = c.category_id; opt.textContent = c.category_name;
+        sel.appendChild(opt);
+      });
+    });
+  } catch {}
+}
+
+async function loadSpecies() {
+  const catFilter = document.getElementById('sp-filter-cat')?.value || '';
+  const q = catFilter ? `?category_id=${catFilter}` : '';
+  try {
+    const { species } = await apiFetch(`/dashboard/species${q}`);
+    const tbody = document.getElementById('species-tbody');
+    tbody.innerHTML = '';
+
+    if (!species.length) {
+      document.getElementById('no-species').style.display = 'block';
+      return;
+    }
+    document.getElementById('no-species').style.display = 'none';
+
+    species.forEach(s => {
+      const tr = document.createElement('tr');
+      tr.id = `sp-row-${s.species_id}`;
+      tr.innerHTML = buildSpeciesRow(s);
+      tbody.appendChild(tr);
+    });
+  } catch(e) { alert('Failed to load species: ' + e.message); }
+}
+
+function buildSpeciesRow(s) {
+  return `
+    <td>${s.species_id}</td>
+    <td>${esc(s.species_name)}</td>
+    <td>${esc(s.scientific_name||'—')}</td>
+    <td>${esc(s.category_name||'—')}</td>
+    <td>${esc(s.description||'—')}</td>
+    <td>
+      <div class="action-btns">
+        <button class="btn-edit" onclick="editSpecies('${s.species_id}')">Edit</button>
+        <button class="btn-del"  onclick="deleteSpecies('${s.species_id}', '${esc(s.species_name)}')">Delete</button>
+      </div>
+    </td>
+  `;
+}
+
+function editSpecies(species_id) {
+  const row = document.getElementById(`sp-row-${species_id}`);
+  const cells = row.querySelectorAll('td');
+  const name   = cells[1].textContent;
+  const sci    = cells[2].textContent === '—' ? '' : cells[2].textContent;
+  const catName = cells[3].textContent;
+  const desc   = cells[4].textContent === '—' ? '' : cells[4].textContent;
+
+  const catOpts = allCategories.map(c =>
+    `<option value="${c.category_id}" ${c.category_name===catName ? 'selected' : ''}>${esc(c.category_name)}</option>`
+  ).join('');
+
+  row.innerHTML = `
+    <td>${species_id}</td>
+    <td><input type="text" value="${esc(name)}" id="edit-name-${species_id}" style="width:100%;padding:.3rem;border:1px solid #ddd;border-radius:4px" /></td>
+    <td><input type="text" value="${esc(sci)}" id="edit-sci-${species_id}" style="width:100%;padding:.3rem;border:1px solid #ddd;border-radius:4px" /></td>
+    <td>
+      <select id="edit-cat-${species_id}" style="width:100%;padding:.3rem;border:1px solid #ddd;border-radius:4px">
+        ${catOpts}
+      </select>
+    </td>
+    <td><input type="text" value="${esc(desc)}" id="edit-desc-${species_id}" style="width:100%;padding:.3rem;border:1px solid #ddd;border-radius:4px" /></td>
+    <td>
+      <div class="action-btns">
+        <button class="btn-save"   onclick="saveSpecies('${species_id}')">Save</button>
+        <button class="btn-cancel" onclick="loadSpecies()">Cancel</button>
+      </div>
+    </td>
+  `;
+}
+
+async function saveSpecies(species_id) {
+  const species_name    = document.getElementById(`edit-name-${species_id}`).value.trim();
+  const scientific_name = document.getElementById(`edit-sci-${species_id}`).value.trim();
+  const category_id     = document.getElementById(`edit-cat-${species_id}`).value;
+  const description     = document.getElementById(`edit-desc-${species_id}`).value.trim();
+  if (!species_name) { alert('Species name required.'); return; }
+  try {
+    await apiFetch(`/admin/species/${species_id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ species_name, scientific_name, category_id, description }),
+    });
+    loadSpecies();
+  } catch(e) { alert('Save failed: ' + e.message); }
+}
+
+async function deleteSpecies(species_id, name) {
+  if (!confirm(`Delete "${name}"? This cannot be undone if reports reference it.`)) return;
+  try {
+    await apiFetch(`/admin/species/${species_id}`, { method: 'DELETE' });
+    document.getElementById(`sp-row-${species_id}`)?.remove();
+  } catch(e) { alert('Delete failed: ' + e.message); }
+}
+
+async function createSpecies() {
+  const msg         = document.getElementById('sp-msg');
+  const category_id = document.getElementById('sp-category').value;
+  const species_name    = document.getElementById('sp-name').value.trim();
+  const scientific_name = document.getElementById('sp-scientific').value.trim();
+  const description     = document.getElementById('sp-desc').value.trim();
+  msg.textContent = '';
+  if (!category_id || !species_name) { msg.textContent = 'Category and species name are required.'; msg.style.color = '#c00'; return; }
+  try {
+    await apiFetch('/admin/species', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category_id, species_name, scientific_name, description }),
+    });
+    msg.textContent = '✅ Species added.'; msg.style.color = '#2d7a4f';
+    document.getElementById('sp-name').value = '';
+    document.getElementById('sp-scientific').value = '';
+    document.getElementById('sp-desc').value = '';
+    loadSpecies();
+  } catch(e) { msg.textContent = e.message; msg.style.color = '#c00'; }
+}
+
+// ===== CATEGORIES =====
+async function loadCategoryList() {
+  try {
+    const { categories } = await apiFetch('/dashboard/categories');
+    const tbody = document.getElementById('categories-tbody');
+    tbody.innerHTML = '';
+    if (!categories.length) { document.getElementById('no-cats').style.display = 'block'; return; }
+    document.getElementById('no-cats').style.display = 'none';
+    categories.forEach(c => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${c.category_id}</td>
+        <td style="font-size:1.3rem">${c.icon||''}</td>
+        <td>${esc(c.category_name)}</td>
+        <td>${esc(c.sdg_goal||'—')}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch(e) { alert('Failed to load categories: ' + e.message); }
+}
+
+async function createCategory() {
+  const msg  = document.getElementById('cat-msg');
+  const name = document.getElementById('cat-name').value.trim();
+  const icon = document.getElementById('cat-icon').value.trim();
+  const sdg  = document.getElementById('cat-sdg').value.trim();
+  msg.textContent = '';
+  if (!name) { msg.textContent = 'Category name is required.'; msg.style.color = '#c00'; return; }
+  try {
+    await apiFetch('/admin/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category_name: name, icon, sdg_goal: sdg }),
+    });
+    msg.textContent = '✅ Category added.'; msg.style.color = '#2d7a4f';
+    document.getElementById('cat-name').value = '';
+    document.getElementById('cat-icon').value = '';
+    document.getElementById('cat-sdg').value  = '';
+    loadCategoryList();
+    allCategories = []; // reset cache so species tab reloads
+  } catch(e) { msg.textContent = e.message; msg.style.color = '#c00'; }
+}
+
+// ===== USERS =====
+async function loadUsers() {
+  try {
+    const { users } = await apiFetch('/admin/users');
+    const tbody = document.getElementById('users-tbody');
+    tbody.innerHTML = '';
+    if (!users.length) { document.getElementById('no-users').style.display = 'block'; return; }
+    document.getElementById('no-users').style.display = 'none';
+    users.forEach((u, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${i+1}</td>
+        <td>${esc(u.user_name)}</td>
+        <td>${esc(u.email)}</td>
+        <td><span style="background:#e8f5e9;color:#2d7a4f;padding:.2rem .5rem;border-radius:5px;font-size:.82rem;font-weight:600;text-transform:capitalize">${u.user_type}</span></td>
+        <td>${u.points}</td>
+        <td>${u.total_reports||0}</td>
+        <td>
+          <div class="action-btns">
+            <select id="role-${u.user_id}" style="padding:.3rem;border:1px solid #ddd;border-radius:5px;font-size:.82rem">
+              <option value="villager"  ${u.user_type==='villager'  ? 'selected':''}>Villager</option>
+              <option value="tourist"   ${u.user_type==='tourist'   ? 'selected':''}>Tourist</option>
+              <option value="admin"     ${u.user_type==='admin'     ? 'selected':''}>Admin</option>
+            </select>
+            <button class="btn-save" onclick="updateUserRole('${u.user_id}')">Save</button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch(e) { alert('Failed to load users: ' + e.message); }
+}
+
+async function updateUserRole(user_id) {
+  const user_type = document.getElementById(`role-${user_id}`).value;
+  const msg = document.getElementById('users-msg');
+  try {
+    await apiFetch(`/admin/users/${user_id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_type }),
+    });
+    msg.textContent = '✅ Role updated.'; msg.style.color = '#2d7a4f';
+    setTimeout(() => { msg.textContent = ''; }, 3000);
+    loadUsers();
+  } catch(e) { msg.textContent = e.message; msg.style.color = '#c00'; }
+}
+
+// ===== STATS =====
+async function loadStats() {
+  try {
+    const stats = await apiFetch('/admin/stats');
+    document.getElementById('as-total').textContent    = stats.reports?.total    ?? '—';
+    document.getElementById('as-pending').textContent  = stats.reports?.pending  ?? '—';
+    document.getElementById('as-verified').textContent = stats.reports?.verified ?? '—';
+    document.getElementById('as-rejected').textContent = stats.reports?.rejected ?? '—';
+    document.getElementById('as-users').textContent    = stats.users?.total      ?? '—';
+    document.getElementById('as-species').textContent  = stats.species?.total    ?? '—';
+  } catch(e) { console.warn('Stats failed:', e.message); }
+}
+
+// ===== HELPERS =====
 function showPhoto(url) {
   const modal = document.createElement('div');
   modal.className = 'report-img-modal';
   modal.innerHTML = `<img src="${url}" />`;
   modal.addEventListener('click', () => modal.remove());
   document.body.appendChild(modal);
+}
+
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
 </body>

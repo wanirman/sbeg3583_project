@@ -99,11 +99,11 @@ async function deleteSpecies(req, res) {
 
 async function createCategory(req, res) {
   try {
-    const { category_name, description } = req.body;
+    const { category_name, description, icon, sdg_goal } = req.body;
     if (!category_name) return res.status(422).json({ error: 'category_name is required' });
 
-    const cat = await Category.create({ category_name, description: description || '' });
-    return res.status(201).json({ category_id: cat._id, category_name: cat.category_name });
+    const cat = await Category.create({ category_name, description: description || '', icon: icon || '', sdg_goal: sdg_goal || '' });
+    return res.status(201).json({ category_id: cat._id, category_name: cat.category_name, icon: cat.icon, sdg_goal: cat.sdg_goal });
   } catch (err) {
     if (err.code === 11000) return res.status(409).json({ error: 'Category name already exists' });
     return res.status(500).json({ error: err.message });
@@ -148,14 +148,19 @@ async function getPendingReports(req, res) {
 
 async function getAdminStats(req, res) {
   try {
-    const [totalUsers, totalReports, pendingCount, verifiedCount, rejectedCount] = await Promise.all([
+    const [totalUsers, totalReports, pendingCount, verifiedCount, rejectedCount, totalSpecies] = await Promise.all([
       User.countDocuments({ user_type: { $ne: 'admin' } }),
       BiodiversityReport.countDocuments(),
       BiodiversityReport.countDocuments({ report_status: 'pending' }),
       BiodiversityReport.countDocuments({ report_status: 'verified' }),
       BiodiversityReport.countDocuments({ report_status: 'rejected' }),
+      require('../models/Species').countDocuments(),
     ]);
-    return res.json({ total_users: totalUsers, total_reports: totalReports, pending: pendingCount, verified: verifiedCount, rejected: rejectedCount });
+    return res.json({
+      reports: { total: totalReports, pending: pendingCount, verified: verifiedCount, rejected: rejectedCount },
+      users:   { total: totalUsers },
+      species: { total: totalSpecies },
+    });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

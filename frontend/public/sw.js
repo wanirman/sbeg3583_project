@@ -1,4 +1,4 @@
-const CACHE_NAME = 'biodiversity-pwa-v1';
+const CACHE_NAME = 'biodiversity-pwa-v2';
 const TILE_CACHE = 'map-tiles-v1';
 const OFFLINE_URL = '/offline.html';
 
@@ -15,6 +15,8 @@ const PRECACHE_ASSETS = [
   '/js/chat.js',
   '/js/gamification.js',
   '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
 ];
 
 self.addEventListener('install', (event) => {
