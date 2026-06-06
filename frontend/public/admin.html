@@ -64,6 +64,8 @@
 </head>
 <body>
 
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><symbol id="i-camera" viewBox="0 0 24 24"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z" /> <circle cx="12" cy="13" r="3" /></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></symbol><symbol id="i-trash-2" viewBox="0 0 24 24"><path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></symbol><symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /> <path d="m15 5 4 4" /></symbol></svg>
+
 <!-- ===== LOGIN ===== -->
 <div id="login-panel">
   <h2>Admin Login</h2>
@@ -222,7 +224,7 @@
       </div>
 
       <div class="form-card" id="inat-token-card" style="margin-top:.5rem">
-        <h3>📷 Photo-ID Token (iNaturalist)</h3>
+        <h3><svg class="icon"><use href="#i-camera"></use></svg> Photo-ID Token (iNaturalist)</h3>
         <div id="inat-token-body" style="font-size:.92rem">Loading…</div>
         <p class="form-msg" style="margin-top:.6rem;color:#888">
           To refresh: get a new token at
@@ -333,8 +335,8 @@ async function loadReports() {
         <td><span class="status-${r.report_status}">${r.report_status}</span></td>
         <td>
           <div class="action-btns">
-            ${r.report_status !== 'verified' ? `<button class="btn-verify" onclick="verify('${r.report_id}','verified')">✓ Verify</button>` : ''}
-            ${r.report_status !== 'rejected' ? `<button class="btn-reject" onclick="verify('${r.report_id}','rejected')">✗ Reject</button>` : ''}
+            ${r.report_status !== 'verified' ? `<button class="btn-verify" onclick="verify('${r.report_id}','verified')"><svg class="icon"><use href="#i-check"></use></svg> Verify</button>` : ''}
+            ${r.report_status !== 'rejected' ? `<button class="btn-reject" onclick="verify('${r.report_id}','rejected')"><svg class="icon"><use href="#i-x"></use></svg> Reject</button>` : ''}
           </div>
           <textarea id="comment-${r.report_id}" placeholder="Admin comment…" style="width:100%;font-size:.75rem;margin-top:.3rem;border:1px solid #ddd;border-radius:4px;padding:.3rem" rows="1"></textarea>
         </td>
@@ -486,7 +488,7 @@ async function createSpecies() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ category_id, species_name, scientific_name, description }),
     });
-    msg.textContent = '✅ Species added.'; msg.style.color = '#2d7a4f';
+    msg.innerHTML = '<svg class="icon"><use href="#i-check"></use></svg> Species added.'; msg.style.color = '#2f6043';
     document.getElementById('sp-name').value = '';
     document.getElementById('sp-scientific').value = '';
     document.getElementById('sp-desc').value = '';
@@ -528,7 +530,7 @@ async function createCategory() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ category_name: name, icon, sdg_goal: sdg }),
     });
-    msg.textContent = '✅ Category added.'; msg.style.color = '#2d7a4f';
+    msg.innerHTML = '<svg class="icon"><use href="#i-check"></use></svg> Category added.'; msg.style.color = '#2f6043';
     document.getElementById('cat-name').value = '';
     document.getElementById('cat-icon').value = '';
     document.getElementById('cat-sdg').value  = '';
@@ -579,7 +581,7 @@ async function updateUserRole(user_id) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_type }),
     });
-    msg.textContent = '✅ Role updated.'; msg.style.color = '#2d7a4f';
+    msg.innerHTML = '<svg class="icon"><use href="#i-check"></use></svg> Role updated.'; msg.style.color = '#2f6043';
     setTimeout(() => { msg.textContent = ''; }, 3000);
     loadUsers();
   } catch(e) { msg.textContent = e.message; msg.style.color = '#c00'; }

@@ -2,25 +2,64 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --green-dark:  #1a3c2e;
-  --green-mid:   #2d7a4f;
-  --green-light: #4caf7d;
-  --green-pale:  #e8f5ee;
-  --accent:      #ff8c00;
-  --text-dark:   #1a1a1a;
-  --text-mid:    #555;
-  --text-light:  #888;
-  --bg:          #f4f7f5;
-  --white:       #ffffff;
-  --red:         #e53935;
-  --blue:        #1565c0;
-  --shadow:      0 2px 12px rgba(0,0,0,.12);
-  --radius:      12px;
+  /* ── Naturalist Field Guide palette ── */
+  --green-dark:  #16301f;   /* deep forest */
+  --green-mid:   #2f6043;   /* fern (primary action, white text safe) */
+  --green-light: #6b8e4e;   /* moss accent */
+  --green-pale:  #e7ecd9;   /* pale sage / parchment-green */
+  --moss:        #6b8e4e;
+  --bark:        #7a5c3e;   /* tree bark brown */
+  --accent:      #b5713a;   /* warm amber-bark highlight */
+  --text-dark:   #2b2620;   /* warm ink */
+  --text-mid:    #5b5346;
+  --text-light:  #8a8270;
+  --bg:          #f4efe2;   /* cream paper */
+  --white:       #fcfaf3;   /* warm off-white card surface */
+  --red:         #b23b34;   /* muted brick */
+  --blue:        #2a6f6a;   /* wetland teal */
+  --line:        rgba(47,60,40,.20);  /* dotted-rule ink */
+  --gold:        #c8a24a;
+  --silver:      #9aa0a6;
+  --bronze:      #b07a4b;
+  --shadow:      0 4px 18px rgba(60,46,28,.14);
+  --radius:      11px;
   --topbar-h:    56px;
-  --nav-h:       62px;
+  --nav-h:       64px;
+  --font-serif:  'Iowan Old Style','Palatino Linotype','Palatino','Book Antiqua',Georgia,'Times New Roman',serif;
+  --font-sans:   ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;
 }
 
-html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-dark); overflow: hidden; }
+html, body {
+  height: 100%;
+  font-family: var(--font-sans);
+  color: var(--text-dark);
+  overflow: hidden;
+  background-color: var(--bg);
+  /* subtle paper grain: faint moss dot-grid over cream */
+  background-image:
+    radial-gradient(rgba(107,142,78,.06) 1px, transparent 1.4px),
+    radial-gradient(rgba(122,92,62,.05) 1px, transparent 1.4px);
+  background-size: 18px 18px, 18px 18px;
+  background-position: 0 0, 9px 9px;
+}
+
+/* ── Serif headings (field-journal voice) ── */
+h1, h2, h3, h4,
+.auth-logo h1, .page-header h2, .profile-card h3 {
+  font-family: var(--font-serif);
+  letter-spacing: .2px;
+}
+
+/* ── Inline SVG icon system (Lucide) ── */
+.icon {
+  width: 1.25em; height: 1.25em;
+  fill: none; stroke: currentColor;
+  stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round;
+  display: inline-block; vertical-align: -0.18em; flex-shrink: 0;
+}
+.icon-lg { width: 1.6em; height: 1.6em; }
+.icon.spin { animation: iconspin .8s linear infinite; }
+@keyframes iconspin { to { transform: rotate(360deg); } }
 
 /* ===== SCREENS ===== */
 .screen { position: fixed; inset: 0; display: none; flex-direction: column; z-index: 1; }
@@ -240,3 +279,104 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   .bottom-nav   { max-width: 480px; left: 50%; transform: translateX(-50%); }
   .topbar       { max-width: 480px; left: 50%; transform: translateX(-50%); }
 }
+
+/* ============================================================
+   NATURALIST FIELD GUIDE — component enhancements
+   ============================================================ */
+
+/* Top bar — herbarium label plate */
+.topbar { border-bottom: 1px solid var(--bark); box-shadow: 0 2px 0 rgba(122,92,62,.25); }
+.topbar-title { font-family: var(--font-serif); letter-spacing: .4px; display: flex; align-items: center; gap: .45rem; }
+.icon-btn { color: var(--white); display: inline-flex; align-items: center; justify-content: center; }
+.icon-btn .icon { width: 1.4em; height: 1.4em; }
+
+/* Section headings — dotted field-note rule + serif voice */
+.page-header { border-bottom: 1.5px dotted var(--line); padding-bottom: .55rem; }
+.page-header h2 { font-size: 1.45rem; display: inline-flex; align-items: center; gap: .45rem; }
+.chart-section h3, .badges-section h3, .pending-section h3,
+.my-records-section h3, .account-section h3, .install-section + * h3 {
+  font-family: var(--font-serif); color: var(--green-dark); letter-spacing: .2px;
+}
+
+/* Cards — pressed-paper with a moss keyline */
+.stat-card, .chart-section, .helix-card, .profile-card,
+.badges-section, .pending-section, .account-section, .my-records-section,
+.leaderboard-list, .report-item {
+  border: 1px solid rgba(107,142,78,.30);
+}
+.stat-card { position: relative; overflow: hidden; }
+.stat-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--moss); }
+.stat-card.sdg14::before { background: var(--blue); }
+.stat-num { font-family: var(--font-serif); }
+
+/* Specimen-tag chips — small-caps bordered labels */
+.points-chip, .type-badge, .count-chip, .sync-chip, .legend-item, .filter-chip {
+  font-family: var(--font-sans); text-transform: uppercase; letter-spacing: .5px;
+  font-weight: 700; border-radius: 5px;
+}
+.points-chip {
+  background: rgba(252,250,243,.16); color: var(--white);
+  border: 1px solid rgba(252,250,243,.4); border-radius: 5px;
+  font-size: .7rem; padding: .22rem .5rem; display: inline-flex; align-items: center; gap: .3rem;
+}
+.type-badge { border: 1px solid var(--moss); background: var(--green-pale); }
+.count-chip { background: var(--bark); color: var(--white); }
+.legend-item { border: 1px solid currentColor; }
+.map-legend { background: rgba(252,250,243,.92); border: 1px solid rgba(122,92,62,.3); }
+
+/* Buttons — letterpress feel */
+.btn-primary {
+  border-radius: 9px; letter-spacing: .3px;
+  box-shadow: 0 2px 0 rgba(22,48,31,.35); display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
+}
+.btn-primary:active { transform: translateY(1px); box-shadow: 0 1px 0 rgba(22,48,31,.35); }
+.btn-secondary { border-radius: 9px; border-color: var(--moss); display: inline-flex; align-items: center; justify-content: center; gap: .4rem; }
+.btn-text { color: var(--green-mid); display: inline-flex; align-items: center; gap: .3rem; }
+
+/* Bottom nav — botanical tab strip */
+.bottom-nav { border-top: 1px solid rgba(122,92,62,.35); background: var(--white); }
+.nav-btn { font-size: 1rem; gap: .2rem; }
+.nav-btn .icon { width: 22px; height: 22px; }
+.nav-btn span { font-family: var(--font-sans); letter-spacing: .3px; text-transform: uppercase; font-size: .6rem; font-weight: 700; }
+.nav-btn.active .icon { stroke-width: 2.3; }
+.nav-btn.active { position: relative; }
+.nav-btn.active::after { content: ""; position: absolute; top: 4px; width: 5px; height: 5px; border-radius: 50%; background: var(--moss); }
+
+/* Floating action buttons */
+.chat-fab { background: var(--green-mid); border: 1px solid rgba(22,48,31,.3); }
+.chat-fab .icon { width: 26px; height: 26px; }
+.map-fab { border: 1px solid rgba(122,92,62,.3); color: var(--green-dark); }
+.map-fab .icon { width: 22px; height: 22px; }
+
+/* Leaderboard — ranked medals */
+.lb-rank { display: flex; align-items: center; justify-content: center; }
+.lb-rank .icon { width: 1.5em; height: 1.5em; }
+.lb-rank .gold   { color: var(--gold); }
+.lb-rank .silver { color: var(--silver); }
+.lb-rank .bronze { color: var(--bronze); }
+.lb-pts { font-family: var(--font-serif); font-weight: 700; color: var(--green-dark); }
+
+/* Badges — herbarium award seals */
+.badge-item { display: inline-flex; align-items: center; gap: .35rem; background: var(--green-pale); border: 1px solid var(--moss); border-radius: 6px; padding: .3rem .6rem; font-size: .82rem; }
+.badge-item .icon { color: var(--accent); }
+
+/* Auth screen — field journal cover */
+.auth-screen, #auth-screen { background-color: var(--green-dark); }
+.auth-container { background: var(--white); border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.35); border: 1px solid rgba(122,92,62,.25); position: relative; }
+.auth-container::before, .auth-container::after {
+  content: ""; position: absolute; width: 34px; height: 34px; opacity: .5;
+  border-color: var(--moss); border-style: solid;
+}
+.auth-container::before { top: 10px; left: 10px; border-width: 2px 0 0 2px; border-top-left-radius: 6px; }
+.auth-container::after  { bottom: 10px; right: 10px; border-width: 0 2px 2px 0; border-bottom-right-radius: 6px; }
+.auth-logo h1 { letter-spacing: 1px; }
+.auth-logo p { font-family: var(--font-serif); font-style: italic; color: var(--bark); }
+.auth-tab.active { color: var(--green-dark); border-bottom: 2px solid var(--moss); }
+
+/* Form inputs — keep warm, focus moss */
+.account-form input:focus, .form-group input:focus,
+.form-group select:focus, .form-group textarea:focus,
+.auth-form input:focus, .auth-form select:focus { border-color: var(--moss); box-shadow: 0 0 0 2px rgba(107,142,78,.15); }
+
+/* Inline icons that precede text get a hair of spacing */
+.field-hint .icon, .account-msg .icon, .success-msg .icon, .error-msg .icon { margin-right: .25em; }

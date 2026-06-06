@@ -1,5 +1,6 @@
 /* Points, badges, leaderboard, profile, and offline sync */
 const BioGamification = (() => {
+  const ICON = (n, c = '') => `<svg class="icon ${c}"><use href="#i-${n}"></use></svg>`;
 
   async function refreshPoints() {
     try {
@@ -21,7 +22,7 @@ const BioGamification = (() => {
       profile.badges.forEach(b => {
         const el = document.createElement('div');
         el.className = 'badge-item';
-        el.innerHTML = `🏅 <span title="${b.description}">${b.badge_name}</span>`;
+        el.innerHTML = `${ICON('award')} <span title="${b.description}">${b.badge_name}</span>`;
         container.appendChild(el);
       });
     } else {
@@ -34,11 +35,11 @@ const BioGamification = (() => {
       const { leaderboard } = await BioAPI.getLeaderboard();
       const list = document.getElementById('leaderboard-list');
       list.innerHTML = '';
-      const medals = ['🥇','🥈','🥉'];
+      const medalColor = ['gold', 'silver', 'bronze'];
       leaderboard.forEach((u, i) => {
         const li = document.createElement('li');
         li.innerHTML = `
-          <span class="lb-rank">${medals[i] || (i+1)}</span>
+          <span class="lb-rank">${i < 3 ? ICON('medal', medalColor[i]) : (i + 1)}</span>
           <div style="flex:1">
             <div class="lb-name">${escapeHTML(u.user_name)}</div>
             <div class="lb-type">${u.user_type} · ${u.verified_count} sightings</div>

@@ -198,7 +198,7 @@
     const pwd      = document.getElementById('ae-password').value;
     try {
       await BioAPI.updateEmail(newEmail, pwd);
-      msg.textContent = '✅ Email updated.';
+      msg.innerHTML = '<svg class="icon"><use href="#i-circle-check"></use></svg> Email updated.';
       msg.classList.add('ok');
       e.target.reset();
     } catch (ex) {
@@ -216,7 +216,7 @@
     const next    = document.getElementById('ap-new').value;
     try {
       await BioAPI.updatePassword(current, next);
-      msg.textContent = '✅ Password updated.';
+      msg.innerHTML = '<svg class="icon"><use href="#i-circle-check"></use></svg> Password updated.';
       msg.classList.add('ok');
       e.target.reset();
     } catch (ex) {

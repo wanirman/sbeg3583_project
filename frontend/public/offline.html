@@ -5,17 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Offline – BioReport</title>
   <style>
-    body { font-family: -apple-system, sans-serif; background: #1a3c2e; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; text-align: center; }
-    .icon { font-size: 4rem; margin-bottom: 1rem; }
-    h2 { font-size: 1.5rem; margin-bottom: .5rem; }
-    p  { color: rgba(255,255,255,.7); }
+    body { font-family: 'Iowan Old Style','Palatino Linotype',Georgia,serif; background: #16301f; color: #f4efe2;
+           display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center;
+           background-image: radial-gradient(rgba(107,142,78,.12) 1px, transparent 1.4px); background-size: 18px 18px; }
+    .wrap { max-width: 320px; padding: 1.5rem; }
+    .icon { width: 64px; height: 64px; stroke: #6b8e4e; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 1rem; }
+    h2 { font-size: 1.5rem; margin: 0 0 .5rem; letter-spacing: .5px; }
+    p  { color: rgba(244,239,226,.7); font-family: ui-sans-serif, -apple-system, 'Segoe UI', sans-serif; font-size: .95rem; line-height: 1.5; }
+    .rule { width: 40px; height: 0; border-top: 1.5px dotted rgba(244,239,226,.4); margin: 1rem auto; }
   </style>
 </head>
 <body>
-  <div>
-    <div class="icon">📡</div>
+  <div class="wrap">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 20h.01" /><path d="M8.5 16.429a5 5 0 0 1 7 0" /><path d="M5 12.859a10 10 0 0 1 5.17-2.69" />
+      <path d="M19 12.859a10 10 0 0 0-2.007-1.523" /><path d="M2 8.82a15 15 0 0 1 4.177-2.643" />
+      <path d="M22 8.82a15 15 0 0 0-11.288-3.764" /><path d="m2 2 20 20" />
+    </svg>
     <h2>You're Offline</h2>
-    <p>Your sightings are saved and will sync when connected.</p>
+    <div class="rule"></div>
+    <p>Your sightings are saved and will sync automatically when you're back online.</p>
   </div>
 </body>
 </html>

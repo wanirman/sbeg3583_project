@@ -3,6 +3,7 @@ const BioReport = (() => {
   let compressedBlob = null;
   let searchTimer = null;
   let currentSuggestions = [];
+  const ICON = (n, c = '') => `<svg class="icon ${c}"><use href="#i-${n}"></use></svg>`;
 
   async function init() {
     await loadCategories();
@@ -61,7 +62,7 @@ const BioReport = (() => {
       item.className = 'taxa-item';
       const thumb = t.default_photo_url
         ? `<img src="${t.default_photo_url}" class="taxa-thumb" alt="" />`
-        : `<div class="taxa-thumb taxa-thumb-empty">🔍</div>`;
+        : `<div class="taxa-thumb taxa-thumb-empty">${ICON('search')}</div>`;
       item.innerHTML = `
         ${thumb}
         <div class="taxa-item-text">
@@ -113,7 +114,7 @@ const BioReport = (() => {
     spSel.value = r.species_id;
 
     const success = document.getElementById('report-success');
-    success.textContent = `✅ Selected: ${r.species_name}`;
+    success.innerHTML = `${ICON('circle-check')} Selected: ${escapeHTML(r.species_name)}`;
     success.classList.remove('hidden');
     setTimeout(() => success.classList.add('hidden'), 2500);
   }
@@ -124,7 +125,7 @@ const BioReport = (() => {
     if (!navigator.onLine) { alert('Photo ID needs an internet connection.'); return; }
     const btn = document.getElementById('btn-identify');
     const box = document.getElementById('identify-results');
-    btn.disabled = true; btn.textContent = '⏳ Identifying…';
+    btn.disabled = true; btn.innerHTML = `${ICON('refresh-cw', 'spin')} Identifying…`;
     box.classList.add('hidden');
 
     const lat = document.getElementById('report-lat').value;
@@ -136,7 +137,7 @@ const BioReport = (() => {
       box.classList.remove('hidden');
       box.innerHTML = `<p class="field-hint" style="color:#c0392b">${escapeHTML(e.message || 'Identification failed.')}</p>`;
     }
-    btn.disabled = false; btn.textContent = '🔍 Identify species from this photo';
+    btn.disabled = false; btn.innerHTML = `${ICON('search')} Identify species from this photo`;
   }
 
   function renderIdentifyResults(suggestions) {
@@ -152,7 +153,7 @@ const BioReport = (() => {
       item.className = 'taxa-item';
       const thumb = s.default_photo_url
         ? `<img src="${s.default_photo_url}" class="taxa-thumb" alt="" />`
-        : `<div class="taxa-thumb taxa-thumb-empty">📷</div>`;
+        : `<div class="taxa-thumb taxa-thumb-empty">${ICON('camera')}</div>`;
       item.innerHTML = `
         ${thumb}
         <div class="taxa-item-text">
@@ -199,19 +200,19 @@ const BioReport = (() => {
       return;
     }
     const btn = document.getElementById('btn-get-gps');
-    btn.textContent = '⏳';
+    btn.innerHTML = ICON('refresh-cw', 'spin');
     btn.disabled = true;
     navigator.geolocation.getCurrentPosition(
       pos => {
         document.getElementById('report-lat').value = pos.coords.latitude.toFixed(6);
         document.getElementById('report-lng').value = pos.coords.longitude.toFixed(6);
-        btn.textContent = '✅';
+        btn.innerHTML = ICON('check');
         btn.disabled = false;
         BioMap.panTo(pos.coords.latitude, pos.coords.longitude);
       },
       err => {
         alert('Could not get GPS location: ' + err.message);
-        btn.textContent = '📍 GPS';
+        btn.innerHTML = `${ICON('map-pin')} GPS`;
         btn.disabled = false;
       },
       { enableHighAccuracy: true, timeout: 10000 }
@@ -307,7 +308,7 @@ const BioReport = (() => {
         if (compressedBlob) fd.append('photo', compressedBlob, `photo_${Date.now()}.jpg`);
 
         const res = await BioAPI.submitSighting(fd);
-        success.textContent = '✅ Sighting submitted! +10 points';
+        success.innerHTML = `${ICON('circle-check')} Sighting submitted! +10 points`;
         success.classList.remove('hidden');
         resetForm();
         BioMap.loadSightings();
