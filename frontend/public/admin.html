@@ -220,6 +220,16 @@
         <div class="stat-card-sm"><div class="n" id="as-users">—</div><div class="l">Users</div></div>
         <div class="stat-card-sm"><div class="n" id="as-species">—</div><div class="l">Species</div></div>
       </div>
+
+      <div class="form-card" id="inat-token-card" style="margin-top:.5rem">
+        <h3>📷 Photo-ID Token (iNaturalist)</h3>
+        <div id="inat-token-body" style="font-size:.92rem">Loading…</div>
+        <p class="form-msg" style="margin-top:.6rem;color:#888">
+          To refresh: get a new token at
+          <a href="https://www.inaturalist.org/users/api_token" target="_blank" rel="noopener">inaturalist.org/users/api_token</a>,
+          paste it into the VM's <code>.env</code> as <code>INAT_API_TOKEN</code>, then run <code>pm2 restart bioreport</code>.
+        </p>
+      </div>
     </div>
 
   </div><!-- admin-wrap -->
@@ -274,7 +284,7 @@ function switchTab(name) {
   if (name === 'species')    { loadSpeciesCategories(); loadSpecies(); }
   if (name === 'categories') loadCategoryList();
   if (name === 'users')      loadUsers();
-  if (name === 'stats')      loadStats();
+  if (name === 'stats')      { loadStats(); loadInatStatus(); }
 }
 
 // ===== REPORTS =====
@@ -586,6 +596,68 @@ async function loadStats() {
     document.getElementById('as-users').textContent    = stats.users?.total      ?? '—';
     document.getElementById('as-species').textContent  = stats.species?.total    ?? '—';
   } catch(e) { console.warn('Stats failed:', e.message); }
+}
+
+// ===== PHOTO-ID TOKEN STATUS =====
+let inatMode = null;
+let inatExpiryEpoch = null;   // epoch seconds when token expires (null if unknown/none)
+let inatTicker = null;
+
+async function loadInatStatus() {
+  const body = document.getElementById('inat-token-body');
+  try {
+    const s = await apiFetch('/external/inat-status');
+    inatMode = s.mode;
+    inatExpiryEpoch = (s.expires_in_seconds != null)
+      ? Math.floor(Date.now() / 1000) + s.expires_in_seconds
+      : null;
+    renderInatStatus();
+    if (!inatTicker) inatTicker = setInterval(renderInatStatus, 30000); // tick every 30s
+  } catch (e) {
+    body.innerHTML = `<span style="color:#c0392b">Could not load token status: ${esc(e.message)}</span>`;
+  }
+}
+
+function fmtDuration(sec) {
+  if (sec <= 0) return 'expired';
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function badge(color, text) {
+  return `<span style="display:inline-block;background:${color};color:#fff;padding:.2rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700">${text}</span>`;
+}
+
+function renderInatStatus() {
+  const body = document.getElementById('inat-token-body');
+  if (!body) return;
+
+  if (inatMode === 'none' || inatMode == null) {
+    body.innerHTML = `${badge('#c0392b', 'NOT CONFIGURED')} <span style="margin-left:.4rem">Photo ID is disabled — no token set.</span>`;
+    return;
+  }
+
+  if (inatMode === 'oauth') {
+    const extra = inatExpiryEpoch
+      ? ` Current token valid for ${fmtDuration(inatExpiryEpoch - Math.floor(Date.now()/1000))}.`
+      : '';
+    body.innerHTML = `${badge('#2d7a4f', 'AUTO-RENEWING')} <span style="margin-left:.4rem">OAuth mode — renews automatically.${extra}</span>`;
+    return;
+  }
+
+  // static mode — live countdown
+  if (inatExpiryEpoch == null) {
+    body.innerHTML = `${badge('#2d7a4f', 'ACTIVE')} <span style="margin-left:.4rem">Token set (expiry unknown).</span>`;
+    return;
+  }
+  const left = inatExpiryEpoch - Math.floor(Date.now() / 1000);
+  if (left <= 0) {
+    body.innerHTML = `${badge('#c0392b', 'EXPIRED')} <span style="margin-left:.4rem">Refresh the token now — photo ID will fail until you do.</span>`;
+  } else if (left < 7200) { // under 2 hours
+    body.innerHTML = `${badge('#e67e22', 'EXPIRING SOON')} <span style="margin-left:.4rem"><strong>${fmtDuration(left)}</strong> left — refresh soon.</span>`;
+  } else {
+    body.innerHTML = `${badge('#2d7a4f', 'ACTIVE')} <span style="margin-left:.4rem"><strong>${fmtDuration(left)}</strong> remaining on the 24h token.</span>`;
+  }
 }
 
 // ===== HELPERS =====
