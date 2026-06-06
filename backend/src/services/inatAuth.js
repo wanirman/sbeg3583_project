@@ -1,17 +1,20 @@
 /* iNaturalist OAuth → auto-refreshing API token service.
 
    iNaturalist's v1 API (incl. computer vision) needs an "API token" — a JWT
-   that expires after ~24h. This service mints one automatically from your
-   registered OAuth application credentials and refreshes it on demand, so the
-   token never has to be pasted by hand.
+   that expires after ~24h. This service mints one automatically and refreshes
+   it on demand, so the token never has to be pasted by hand.
+
+   Preferred: a long-lived OAuth access token obtained once via the
+   authorization-code flow (see scripts/inat-setup.js). iNaturalist access
+   tokens do not expire, so this is effectively permanent and stores NO password.
 
    Flow per refresh:
-     1. POST /oauth/token (password grant)      -> OAuth access_token
-     2. GET  /users/api_token (Bearer access)   -> api_token JWT (24h)
+     GET /users/api_token (Bearer access_token)  ->  api_token JWT (24h)
 
-   Config (.env):
-     INAT_APP_ID, INAT_APP_SECRET, INAT_USERNAME, INAT_PASSWORD   (OAuth mode)
-     INAT_API_TOKEN                                               (manual fallback)
+   Config (.env), in priority order:
+     INAT_ACCESS_TOKEN                                  (authorization-code flow — preferred)
+     INAT_APP_ID/SECRET + INAT_USERNAME/PASSWORD        (password grant — usually blocked by iNat)
+     INAT_API_TOKEN                                     (manual 24h token — fallback)
 */
 
 const OAUTH_TOKEN_URL = 'https://www.inaturalist.org/oauth/token';
@@ -21,10 +24,12 @@ const REFRESH_BUFFER  = 300; // refresh when <5 min of validity remains
 let cached = { jwt: null, exp: 0 }; // exp in epoch seconds
 let refreshPromise = null;
 
-function hasOAuthCreds() {
+function hasAccessToken()   { return !!process.env.INAT_ACCESS_TOKEN; }
+function hasPasswordCreds() {
   return !!(process.env.INAT_APP_ID && process.env.INAT_APP_SECRET &&
             process.env.INAT_USERNAME && process.env.INAT_PASSWORD);
 }
+function canMint() { return hasAccessToken() || hasPasswordCreds(); }
 
 // Read the `exp` claim from a JWT without verifying the signature
 function decodeJwtExp(jwt) {
@@ -34,7 +39,10 @@ function decodeJwtExp(jwt) {
   } catch { return 0; }
 }
 
+// Obtain an OAuth access token — stored one (preferred) or via password grant
 async function fetchAccessToken() {
+  if (hasAccessToken()) return process.env.INAT_ACCESS_TOKEN;
+
   const body = new URLSearchParams({
     grant_type:    'password',
     client_id:     process.env.INAT_APP_ID,
@@ -77,7 +85,7 @@ async function refresh() {
    - Manual mode: returns the static INAT_API_TOKEN.
    - Unconfigured: returns null. */
 async function getApiToken() {
-  if (!hasOAuthCreds()) {
+  if (!canMint()) {
     return process.env.INAT_API_TOKEN || null;
   }
   const now = Math.floor(Date.now() / 1000);
@@ -97,9 +105,10 @@ function invalidate() {
 // Diagnostics for a status endpoint
 function status() {
   const now = Math.floor(Date.now() / 1000);
-  if (hasOAuthCreds()) {
+  if (canMint()) {
     return {
       mode: 'oauth',
+      submode: hasAccessToken() ? 'access-token' : 'password',
       configured: true,
       token_cached: !!cached.jwt,
       expires_in_seconds: cached.jwt ? Math.max(0, cached.exp - now) : null,
