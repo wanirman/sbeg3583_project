@@ -74,4 +74,65 @@ async function getProfile(req, res) {
   }
 }
 
-module.exports = { register, login, getProfile };
+// Change the logged-in user's email (requires current password to confirm identity)
+async function updateEmail(req, res) {
+  try {
+    const { new_email, current_password } = req.body;
+    if (!new_email || !current_password) {
+      return res.status(422).json({ error: 'new_email and current_password are required' });
+    }
+    const email = new_email.toLowerCase().trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(422).json({ error: 'Please enter a valid email address' });
+    }
+
+    const user = await User.findById(req.user.user_id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!(await bcrypt.compare(current_password, user.password_hash))) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+    if (email === user.email) {
+      return res.status(422).json({ error: 'That is already your email address' });
+    }
+
+    const taken = await User.findOne({ email });
+    if (taken) return res.status(409).json({ error: 'That email is already in use' });
+
+    user.email = email;
+    await user.save();
+    // Re-issue a token so the embedded email claim stays current
+    return res.json({ message: 'Email updated', email: user.email, token: signToken(user) });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+// Change the logged-in user's password (requires current password)
+async function updatePassword(req, res) {
+  try {
+    const { current_password, new_password } = req.body;
+    if (!current_password || !new_password) {
+      return res.status(422).json({ error: 'current_password and new_password are required' });
+    }
+    if (new_password.length < 6) {
+      return res.status(422).json({ error: 'New password must be at least 6 characters' });
+    }
+
+    const user = await User.findById(req.user.user_id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!(await bcrypt.compare(current_password, user.password_hash))) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+    if (await bcrypt.compare(new_password, user.password_hash)) {
+      return res.status(422).json({ error: 'New password must be different from the current one' });
+    }
+
+    user.password_hash = await bcrypt.hash(new_password, 12);
+    await user.save();
+    return res.json({ message: 'Password updated' });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+module.exports = { register, login, getProfile, updateEmail, updatePassword };

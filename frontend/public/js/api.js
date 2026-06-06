@@ -43,6 +43,17 @@ const BioAPI = (() => {
     return data;
   }
 
+  async function updateEmail(new_email, current_password) {
+    const data = await request('PATCH', '/auth/email', { new_email, current_password });
+    if (data.token) setToken(data.token);            // refresh token (email claim changed)
+    setUser({ ...getUser(), email: data.email });
+    return data;
+  }
+
+  async function updatePassword(current_password, new_password) {
+    return request('PATCH', '/auth/password', { current_password, new_password });
+  }
+
   async function submitSighting(formData) {
     return request('POST', '/sighting', formData, true);
   }
@@ -137,7 +148,7 @@ const BioAPI = (() => {
     return null;
   }
 
-  return { getToken, setToken, clearToken, getUser, setUser, login, register, getProfile, submitSighting, syncBatch, getSightingsGeoJSON, getCategories, getSpecies, getDashboardStats, getLeaderboard, getTripleHelix, getMyReports, getChatMessages, postChatMessage, geocodePlacename, searchTaxa, resolveSpecies, identifyPhoto };
+  return { getToken, setToken, clearToken, getUser, setUser, login, register, getProfile, updateEmail, updatePassword, submitSighting, syncBatch, getSightingsGeoJSON, getCategories, getSpecies, getDashboardStats, getLeaderboard, getTripleHelix, getMyReports, getChatMessages, postChatMessage, geocodePlacename, searchTaxa, resolveSpecies, identifyPhoto };
 })();
 
 window.BioAPI = BioAPI;

@@ -159,6 +159,16 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 .profile-stats small { font-size: .75rem; color: var(--text-mid); }
 .badges-section, .pending-section { background: var(--white); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; box-shadow: var(--shadow); }
 .install-section { margin-bottom: 1rem; }
+.account-section { background: var(--white); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; box-shadow: var(--shadow); }
+.account-section h3 { font-size: 1rem; color: var(--green-dark); margin-bottom: .75rem; }
+.account-form { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1rem; }
+.account-form:last-child { margin-bottom: 0; }
+.account-form label { font-size: .82rem; font-weight: 600; color: var(--text-mid); }
+.account-form input { width: 100%; box-sizing: border-box; padding: .65rem .8rem; border: 1.5px solid #ddd; border-radius: var(--radius); font-size: .95rem; }
+.account-form input:focus { outline: none; border-color: var(--green-mid); }
+.account-msg { font-size: .82rem; min-height: 1em; }
+.account-msg.ok  { color: var(--green-mid); }
+.account-msg.err { color: var(--red); }
 .ios-install-hint { margin-top: .75rem; font-size: .82rem; line-height: 1.5; color: var(--green-dark); background: var(--green-pale); border-radius: var(--radius); padding: .6rem .75rem; text-align: center; }
 .badges-section h3, .pending-section h3 { font-size: 1rem; color: var(--green-dark); margin-bottom: .75rem; }
 .badges-grid { display: flex; flex-wrap: wrap; gap: .5rem; }

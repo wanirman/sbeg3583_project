@@ -189,6 +189,24 @@
         <button id="btn-install-profile" class="btn-primary btn-full install-btn hidden">📲 Install App on this Device</button>
         <p class="ios-install-hint hidden">📱 On iPhone/iPad: tap <strong>Share</strong> ⬆️ then <strong>Add to Home Screen</strong></p>
       </div>
+
+      <div class="account-section">
+        <h3>Account Settings</h3>
+        <form id="email-form" class="account-form">
+          <label>Change Email</label>
+          <input type="email" id="ae-new-email" placeholder="New email address" required />
+          <input type="password" id="ae-password" placeholder="Current password" required />
+          <button type="submit" class="btn-secondary btn-full">Update Email</button>
+          <p id="email-msg" class="account-msg"></p>
+        </form>
+        <form id="password-form" class="account-form">
+          <label>Change Password</label>
+          <input type="password" id="ap-current" placeholder="Current password" required />
+          <input type="password" id="ap-new" placeholder="New password (min 6 chars)" required minlength="6" />
+          <button type="submit" class="btn-secondary btn-full">Update Password</button>
+          <p id="password-msg" class="account-msg"></p>
+        </form>
+      </div>
       <div class="my-records-section">
         <h3>My Records</h3>
         <div class="record-filter-row">

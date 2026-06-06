@@ -192,6 +192,42 @@
     showAuth();
   });
 
+  // Account settings — change email
+  document.getElementById('email-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const msg = document.getElementById('email-msg');
+    msg.textContent = ''; msg.className = 'account-msg';
+    const newEmail = document.getElementById('ae-new-email').value;
+    const pwd      = document.getElementById('ae-password').value;
+    try {
+      await BioAPI.updateEmail(newEmail, pwd);
+      msg.textContent = '✅ Email updated.';
+      msg.classList.add('ok');
+      e.target.reset();
+    } catch (ex) {
+      msg.textContent = ex.message || 'Could not update email';
+      msg.classList.add('err');
+    }
+  });
+
+  // Account settings — change password
+  document.getElementById('password-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const msg = document.getElementById('password-msg');
+    msg.textContent = ''; msg.className = 'account-msg';
+    const current = document.getElementById('ap-current').value;
+    const next    = document.getElementById('ap-new').value;
+    try {
+      await BioAPI.updatePassword(current, next);
+      msg.textContent = '✅ Password updated.';
+      msg.classList.add('ok');
+      e.target.reset();
+    } catch (ex) {
+      msg.textContent = ex.message || 'Could not update password';
+      msg.classList.add('err');
+    }
+  });
+
   // Force sync button
   document.getElementById('btn-force-sync').addEventListener('click', async () => {
     if (!navigator.onLine) { alert('No internet connection.'); return; }
