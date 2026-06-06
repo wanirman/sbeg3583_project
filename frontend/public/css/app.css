@@ -30,6 +30,8 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 .auth-container { margin: auto; width: 100%; max-width: 380px; padding: 2rem 1.5rem; }
 .auth-logo { text-align: center; margin-bottom: 2rem; }
 .auth-logo-icon { font-size: 3rem; }
+.auth-logo-icon img { width: 80px; height: 80px; border-radius: 18px; box-shadow: var(--shadow); }
+.brand-icon { width: 1.5em; height: 1.5em; border-radius: 5px; vertical-align: middle; margin-right: .15em; }
 .auth-logo h1 { font-size: 2rem; color: var(--green-dark); }
 .auth-logo p  { color: var(--text-mid); font-size: .9rem; }
 .auth-tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 1.5rem; }
@@ -151,6 +153,7 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
 /* ===== PROFILE ===== */
 .profile-card { background: var(--white); border-radius: var(--radius); padding: 1.5rem; text-align: center; box-shadow: var(--shadow); margin-bottom: 1rem; }
 .profile-avatar { font-size: 3rem; }
+.profile-avatar img { width: 72px; height: 72px; border-radius: 50%; box-shadow: var(--shadow); }
 .profile-card h3 { font-size: 1.3rem; margin: .5rem 0 .3rem; }
 .type-badge { background: var(--green-pale); color: var(--green-dark); font-size: .75rem; padding: .2rem .6rem; border-radius: 999px; text-transform: capitalize; }
 .profile-stats { display: flex; justify-content: center; gap: 2rem; margin-top: 1rem; }
