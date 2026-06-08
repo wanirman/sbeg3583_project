@@ -1,4 +1,4 @@
-const CACHE_NAME = 'biodiversity-pwa-v11';
+const CACHE_NAME = 'biodiversity-pwa-v12';
 const TILE_CACHE = 'map-tiles-v1';
 const OFFLINE_URL = '/offline.html';
 
@@ -17,6 +17,14 @@ const PRECACHE_ASSETS = [
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
+  // Leaflet (vendored locally so the map works fully offline)
+  '/vendor/leaflet/leaflet.js',
+  '/vendor/leaflet/leaflet.css',
+  '/vendor/leaflet/images/layers.png',
+  '/vendor/leaflet/images/layers-2x.png',
+  '/vendor/leaflet/images/marker-icon.png',
+  '/vendor/leaflet/images/marker-icon-2x.png',
+  '/vendor/leaflet/images/marker-shadow.png',
 ];
 
 self.addEventListener('install', (event) => {
