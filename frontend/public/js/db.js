@@ -1,6 +1,6 @@
 /* IndexedDB wrapper for offline storage */
 const DB_NAME = 'biodiversity_pwa';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let _db = null;
 
@@ -20,9 +20,34 @@ function openDB() {
       if (!db.objectStoreNames.contains('geocache')) {
         db.createObjectStore('geocache', { keyPath: 'query' });
       }
+      // v2: cached reference data (categories/species) so the report form
+      // works fully offline.
+      if (!db.objectStoreNames.contains('reference')) {
+        db.createObjectStore('reference', { keyPath: 'key' });
+      }
     };
     req.onsuccess = e => { _db = e.target.result; resolve(_db); };
     req.onerror = e => reject(e.target.error);
+  });
+}
+
+async function cacheReference(key, data) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('reference', 'readwrite');
+    const req = tx.objectStore('reference').put({ key, data, cached_at: Date.now() });
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function getReference(key) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('reference', 'readonly');
+    const req = tx.objectStore('reference').get(key);
+    req.onsuccess = () => resolve(req.result?.data || null);
+    req.onerror = () => reject(req.error);
   });
 }
 
@@ -116,4 +141,4 @@ async function setCachedGeocode(query, result) {
   });
 }
 
-window.BioDB = { queueSighting, getPendingSightings, markSightingSynced, getPendingSightingCount, queueChatMessage, getAllChatQueue, clearChatQueue, getCachedGeocode, setCachedGeocode };
+window.BioDB = { queueSighting, getPendingSightings, markSightingSynced, getPendingSightingCount, queueChatMessage, getAllChatQueue, clearChatQueue, getCachedGeocode, setCachedGeocode, cacheReference, getReference };

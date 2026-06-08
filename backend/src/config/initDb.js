@@ -1,8 +1,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
-const mongoose = require('mongoose');
-const Category = require('../models/Category');
-const Species  = require('../models/Species');
-const Badge    = require('../models/Badge');
+const fs   = require('fs');
+const path = require('path');
+const mysql = require('mysql2/promise');
 
 const categories = [
   { category_name: 'Birds',    description: 'Avian species observed in the area' },
@@ -26,29 +25,55 @@ const badges = [
 ];
 
 async function seed() {
-  await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/biodiversity_pwa');
-  console.log('Connected. Seeding...');
+  const conn = await mysql.createConnection({
+    host:               process.env.DB_HOST     || '127.0.0.1',
+    port:               parseInt(process.env.DB_PORT) || 3306,
+    user:               process.env.DB_USER     || 'root',
+    password:           process.env.DB_PASSWORD || '',
+    database:           process.env.DB_NAME     || 'biodiversity_pwa',
+    multipleStatements: true,
+  });
+  console.log('Connected. Creating schema...');
 
+  const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
+  await conn.query(schema);
+  console.log('Schema ready.');
+
+  // Categories — idempotent upsert keyed on the unique category_name.
   for (const c of categories) {
-    await Category.findOneAndUpdate({ category_name: c.category_name }, c, { upsert: true, new: true });
+    await conn.query(
+      `INSERT INTO categories (category_name, description) VALUES (?, ?)
+       ON DUPLICATE KEY UPDATE description = VALUES(description)`,
+      [c.category_name, c.description]
+    );
   }
   console.log('Categories seeded.');
 
   for (const [catName, speciesList] of Object.entries(speciesByCategory)) {
-    const cat = await Category.findOne({ category_name: catName });
+    const [[cat]] = await conn.query('SELECT category_id FROM categories WHERE category_name = ?', [catName]);
     for (const s of speciesList) {
-      await Species.findOneAndUpdate({ species_name: s.species_name }, { ...s, category_id: cat._id }, { upsert: true, new: true });
+      // No natural unique key on species_name, so guard against duplicates manually.
+      const [[existing]] = await conn.query('SELECT species_id FROM species WHERE species_name = ?', [s.species_name]);
+      if (existing) {
+        await conn.query('UPDATE species SET scientific_name = ?, category_id = ? WHERE species_id = ?', [s.scientific_name, cat.category_id, existing.species_id]);
+      } else {
+        await conn.query('INSERT INTO species (species_name, scientific_name, category_id) VALUES (?, ?, ?)', [s.species_name, s.scientific_name, cat.category_id]);
+      }
     }
   }
   console.log('Species seeded.');
 
   for (const b of badges) {
-    await Badge.findOneAndUpdate({ badge_name: b.badge_name }, b, { upsert: true, new: true });
+    await conn.query(
+      `INSERT INTO badges (badge_name, description, threshold) VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE description = VALUES(description), threshold = VALUES(threshold)`,
+      [b.badge_name, b.description, b.threshold]
+    );
   }
   console.log('Badges seeded.');
 
   console.log('Database initialised successfully.');
-  await mongoose.disconnect();
+  await conn.end();
 }
 
 seed().catch(err => { console.error(err); process.exit(1); });

@@ -101,14 +101,25 @@ const BioGamification = (() => {
   async function syncPendingSightings() {
     const pending = await BioDB.getPendingSightings();
     if (pending.length === 0) return;
-    try {
-      const { results } = await BioAPI.syncBatch(pending);
-      for (const r of results) {
-        if (r.status === 'synced') await BioDB.markSightingSynced(r.local_id);
+    // Upload one at a time as multipart so each queued photo is included.
+    for (const s of pending) {
+      try {
+        const fd = new FormData();
+        fd.append('category_id', s.category_id);
+        fd.append('species_id',  s.species_id);
+        fd.append('latitude',    s.latitude);
+        fd.append('longitude',   s.longitude);
+        fd.append('notes',       s.notes || '');
+        fd.append('timestamp',   s.timestamp || new Date().toISOString());
+        if (s.photo) fd.append('photo', s.photo, `photo_${s.local_id}.jpg`);
+        await BioAPI.submitSighting(fd);
+        await BioDB.markSightingSynced(s.local_id);
+      } catch {
+        break; // network down or rejected — keep the rest queued and retry later
       }
-      await updatePendingCount();
-      await refreshPoints();
-    } catch { /* still offline */ }
+    }
+    await updatePendingCount();
+    await refreshPoints();
   }
 
   async function loadMyReports(status) {

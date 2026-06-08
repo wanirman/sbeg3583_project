@@ -435,3 +435,10 @@ h1, h2, h3, h4,
 
 /* Inline icons that precede text get a hair of spacing */
 .field-hint .icon, .account-msg .icon, .success-msg .icon, .error-msg .icon { margin-right: .25em; }
+
+/* ===== Email verification step ===== */
+.verify-intro   { font-size: .9rem; color: var(--text, #333); margin: 0 0 .25rem; }
+.verify-devcode { font-size: .85rem; background: var(--green-pale, #eef6ee); border: 1px dashed var(--green-mid, #6aa06a);
+                  border-radius: 8px; padding: .5rem .6rem; margin: 0 0 .25rem; color: var(--green-dark, #2b5d2b); }
+.verify-devcode strong { letter-spacing: 2px; font-size: 1.05rem; }
+#verify-code { letter-spacing: 4px; text-align: center; font-size: 1.1rem; }

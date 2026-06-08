@@ -19,22 +19,33 @@ const BioAPI = (() => {
 
     const res = await fetch(API_BASE + path, opts);
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw { status: res.status, message: data.error || 'Request failed' };
+    if (!res.ok) throw { status: res.status, message: data.error || 'Request failed', data };
     return data;
   }
 
-  async function login(email, password) {
-    const data = await request('POST', '/auth/login', { email, password });
+  // Log in with a username OR an email address (sent as `identifier`).
+  async function login(identifier, password) {
+    const data = await request('POST', '/auth/login', { identifier, password });
     setToken(data.token);
     setUser({ user_id: data.user_id, user_name: data.user_name, user_type: data.user_type, points: data.points });
     return data;
   }
 
+  // Registration no longer logs in immediately — the account must be verified first.
   async function register(user_name, email, password, user_type) {
-    const data = await request('POST', '/auth/register', { user_name, email, password, user_type });
+    return request('POST', '/auth/register', { user_name, email, password, user_type });
+  }
+
+  // Confirm the 6-digit code; on success a session token is issued and stored.
+  async function verifyEmail(identifier, code) {
+    const data = await request('POST', '/auth/verify', { identifier, code });
     setToken(data.token);
-    setUser({ user_id: data.user_id, user_name: data.user_name, user_type: data.user_type, points: 0 });
+    setUser({ user_id: data.user_id, user_name: data.user_name, user_type: data.user_type, points: data.points });
     return data;
+  }
+
+  async function resendCode(identifier) {
+    return request('POST', '/auth/resend', { identifier });
   }
 
   async function getProfile() {
@@ -66,13 +77,32 @@ const BioAPI = (() => {
     return request('GET', '/sighting/geojson');
   }
 
+  // Reference data needed to file a report. Cached in IndexedDB so the report
+  // form keeps working offline (stale-while-revalidate: serve cache on failure).
   async function getCategories() {
-    return request('GET', '/dashboard/categories');
+    try {
+      const data = await request('GET', '/dashboard/categories');
+      await BioDB.cacheReference('categories', data);
+      return data;
+    } catch (e) {
+      const cached = await BioDB.getReference('categories');
+      if (cached) return cached;
+      throw e;
+    }
   }
 
   async function getSpecies(category_id) {
+    const key = `species_${category_id || 'all'}`;
     const q = category_id ? `?category_id=${category_id}` : '';
-    return request('GET', `/dashboard/species${q}`);
+    try {
+      const data = await request('GET', `/dashboard/species${q}`);
+      await BioDB.cacheReference(key, data);
+      return data;
+    } catch (e) {
+      const cached = await BioDB.getReference(key);
+      if (cached) return cached;
+      throw e;
+    }
   }
 
   async function getDashboardStats() {
@@ -148,7 +178,7 @@ const BioAPI = (() => {
     return null;
   }
 
-  return { getToken, setToken, clearToken, getUser, setUser, login, register, getProfile, updateEmail, updatePassword, submitSighting, syncBatch, getSightingsGeoJSON, getCategories, getSpecies, getDashboardStats, getLeaderboard, getTripleHelix, getMyReports, getChatMessages, postChatMessage, geocodePlacename, searchTaxa, resolveSpecies, identifyPhoto };
+  return { getToken, setToken, clearToken, getUser, setUser, login, register, verifyEmail, resendCode, getProfile, updateEmail, updatePassword, submitSighting, syncBatch, getSightingsGeoJSON, getCategories, getSpecies, getDashboardStats, getLeaderboard, getTripleHelix, getMyReports, getChatMessages, postChatMessage, geocodePlacename, searchTaxa, resolveSpecies, identifyPhoto };
 })();
 
 window.BioAPI = BioAPI;

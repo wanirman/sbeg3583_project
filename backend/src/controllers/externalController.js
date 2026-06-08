@@ -1,5 +1,4 @@
-const Species  = require('../models/Species');
-const Category = require('../models/Category');
+const { pool } = require('../config/database');
 const inatAuth = require('../services/inatAuth');
 
 const INAT_API = 'https://api.inaturalist.org/v1';
@@ -19,15 +18,13 @@ const ICONIC_TO_CATEGORY = {
   Fungi:          'Fungi',
 };
 
-/* Find a Category by name (case-insensitive), creating it if absent. */
+/* Find a Category by name (case-insensitive via the table's _ci collation),
+   creating it if absent. Returns the category row. */
 async function findOrCreateCategory(name) {
-  let cat = await Category.findOne({ category_name: new RegExp(`^${escapeRegex(name)}$`, 'i') });
-  if (!cat) cat = await Category.create({ category_name: name });
-  return cat;
-}
-
-function escapeRegex(s) {
-  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const [rows] = await pool.query('SELECT * FROM categories WHERE category_name = ? LIMIT 1', [name]);
+  if (rows.length) return rows[0];
+  const [result] = await pool.query('INSERT INTO categories (category_name) VALUES (?)', [name]);
+  return { category_id: result.insertId, category_name: name };
 }
 
 /* ── Resolve an iNaturalist taxon to a local species_id (find-or-create) ──
@@ -43,32 +40,42 @@ async function resolveSpecies(req, res) {
 
     // 1. Try to find an existing local species (by iNat ID first, then scientific name)
     let species = null;
-    if (inat_taxon_id) species = await Species.findOne({ inat_taxon_id });
+    if (inat_taxon_id) {
+      const [rows] = await pool.query('SELECT * FROM species WHERE inat_taxon_id = ? LIMIT 1', [inat_taxon_id]);
+      species = rows[0] || null;
+    }
     if (!species && scientific_name) {
-      species = await Species.findOne({ scientific_name: new RegExp(`^${escapeRegex(scientific_name)}$`, 'i') });
+      const [rows] = await pool.query('SELECT * FROM species WHERE scientific_name = ? LIMIT 1', [scientific_name]);
+      species = rows[0] || null;
     }
 
     // 2. Otherwise create it, mapping the iconic taxon to a category
     if (!species) {
       const catName = ICONIC_TO_CATEGORY[iconic_taxon_name] || 'Other';
       const category = await findOrCreateCategory(catName);
-      species = await Species.create({
+      const [result] = await pool.query(
+        `INSERT INTO species (species_name, scientific_name, category_id, inat_taxon_id, default_photo_url)
+         VALUES (?, ?, ?, ?, ?)`,
+        [species_name || scientific_name, scientific_name || '', category.category_id, inat_taxon_id || null, default_photo_url || '']
+      );
+      species = {
+        species_id:        result.insertId,
         species_name:      species_name || scientific_name,
         scientific_name:   scientific_name || '',
-        category_id:       category._id,
-        inat_taxon_id:     inat_taxon_id || null,
-        default_photo_url: default_photo_url || '',
-      });
+        category_id:       category.category_id,
+      };
     } else if (inat_taxon_id && !species.inat_taxon_id) {
-      // Backfill the iNat ID on a pre-existing local species
-      species.inat_taxon_id = inat_taxon_id;
-      if (default_photo_url && !species.default_photo_url) species.default_photo_url = default_photo_url;
-      await species.save();
+      // Backfill the iNat ID (and photo) on a pre-existing local species
+      const newPhoto = (default_photo_url && !species.default_photo_url) ? default_photo_url : species.default_photo_url;
+      await pool.query(
+        'UPDATE species SET inat_taxon_id = ?, default_photo_url = ? WHERE species_id = ?',
+        [inat_taxon_id, newPhoto || '', species.species_id]
+      );
     }
 
-    const category = await Category.findById(species.category_id).lean();
+    const [[category]] = await pool.query('SELECT category_name FROM categories WHERE category_id = ?', [species.category_id]);
     return res.json({
-      species_id:      species._id,
+      species_id:      species.species_id,
       species_name:    species.species_name,
       scientific_name: species.scientific_name,
       category_id:     species.category_id,

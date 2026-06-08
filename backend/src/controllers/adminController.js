@@ -1,32 +1,28 @@
-const User    = require('../models/User');
-const Species  = require('../models/Species');
-const Category = require('../models/Category');
-const BiodiversityReport = require('../models/BiodiversityReport');
+const { pool } = require('../config/database');
 
 /* ── Users ─────────────────────────────────────────────── */
 
 async function listUsers(req, res) {
   try {
     const { user_type, limit = 50, offset = 0 } = req.query;
-    const filter = user_type ? { user_type } : {};
-    const users = await User.find(filter)
-      .select('-password_hash')
-      .sort({ join_date: -1 })
-      .skip(parseInt(offset))
-      .limit(parseInt(limit))
-      .lean();
+    const where = [];
+    const params = [];
+    if (user_type) { where.push('user_type = ?'); params.push(user_type); }
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
-    const result = await Promise.all(users.map(async u => ({
-      user_id:        u._id,
-      user_name:      u.user_name,
-      email:          u.email,
-      user_type:      u.user_type,
-      points:         u.points,
-      join_date:      u.join_date,
-      total_reports:  await BiodiversityReport.countDocuments({ user_id: u._id }),
-    })));
+    const lim = Math.max(0, parseInt(limit)  || 50);
+    const off = Math.max(0, parseInt(offset) || 0);
 
-    return res.json({ users: result });
+    const [users] = await pool.query(
+      `SELECT u.user_id, u.user_name, u.email, u.user_type, u.points, u.join_date,
+              (SELECT COUNT(*) FROM biodiversity_reports r WHERE r.user_id = u.user_id) AS total_reports
+       FROM users u ${whereSql}
+       ORDER BY u.join_date DESC
+       LIMIT ${lim} OFFSET ${off}`,
+      params
+    );
+
+    return res.json({ users });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -38,9 +34,11 @@ async function updateUser(req, res) {
     if (!['villager', 'tourist', 'admin'].includes(user_type)) {
       return res.status(422).json({ error: 'user_type must be villager, tourist, or admin' });
     }
-    const user = await User.findByIdAndUpdate(req.params.user_id, { user_type }, { new: true }).select('-password_hash').lean();
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    return res.json({ user_id: user._id, user_name: user.user_name, user_type: user.user_type });
+    const [result] = await pool.query('UPDATE users SET user_type = ? WHERE user_id = ?', [user_type, req.params.user_id]);
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'User not found' });
+
+    const [[user]] = await pool.query('SELECT user_id, user_name, user_type FROM users WHERE user_id = ?', [req.params.user_id]);
+    return res.json({ user_id: user.user_id, user_name: user.user_name, user_type: user.user_type });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -54,11 +52,14 @@ async function createSpecies(req, res) {
     if (!species_name || !category_id) {
       return res.status(422).json({ error: 'species_name and category_id are required' });
     }
-    const cat = await Category.findById(category_id);
-    if (!cat) return res.status(422).json({ error: 'Category not found' });
+    const [cats] = await pool.query('SELECT category_id FROM categories WHERE category_id = ? LIMIT 1', [category_id]);
+    if (!cats.length) return res.status(422).json({ error: 'Category not found' });
 
-    const species = await Species.create({ species_name, scientific_name: scientific_name || '', category_id, description: description || '' });
-    return res.status(201).json({ species_id: species._id, species_name: species.species_name, scientific_name: species.scientific_name, category_id: species.category_id });
+    const [result] = await pool.query(
+      'INSERT INTO species (species_name, scientific_name, category_id, description) VALUES (?, ?, ?, ?)',
+      [species_name, scientific_name || '', category_id, description || '']
+    );
+    return res.status(201).json({ species_id: result.insertId, species_name, scientific_name: scientific_name || '', category_id });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -67,15 +68,21 @@ async function createSpecies(req, res) {
 async function updateSpecies(req, res) {
   try {
     const { species_name, scientific_name, category_id, description } = req.body;
-    const update = {};
-    if (species_name)    update.species_name    = species_name;
-    if (scientific_name !== undefined) update.scientific_name = scientific_name;
-    if (category_id)     update.category_id     = category_id;
-    if (description !== undefined)     update.description     = description;
+    const sets = [];
+    const params = [];
+    if (species_name)                  { sets.push('species_name = ?');    params.push(species_name); }
+    if (scientific_name !== undefined) { sets.push('scientific_name = ?'); params.push(scientific_name); }
+    if (category_id)                   { sets.push('category_id = ?');     params.push(category_id); }
+    if (description !== undefined)     { sets.push('description = ?');     params.push(description); }
 
-    const species = await Species.findByIdAndUpdate(req.params.species_id, update, { new: true }).lean();
-    if (!species) return res.status(404).json({ error: 'Species not found' });
-    return res.json({ species_id: species._id, species_name: species.species_name, scientific_name: species.scientific_name });
+    if (!sets.length) return res.status(422).json({ error: 'No fields to update' });
+
+    params.push(req.params.species_id);
+    const [result] = await pool.query(`UPDATE species SET ${sets.join(', ')} WHERE species_id = ?`, params);
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Species not found' });
+
+    const [[species]] = await pool.query('SELECT species_id, species_name, scientific_name FROM species WHERE species_id = ?', [req.params.species_id]);
+    return res.json({ species_id: species.species_id, species_name: species.species_name, scientific_name: species.scientific_name });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -83,12 +90,12 @@ async function updateSpecies(req, res) {
 
 async function deleteSpecies(req, res) {
   try {
-    const inUse = await BiodiversityReport.exists({ species_id: req.params.species_id });
-    if (inUse) {
+    const [inUse] = await pool.query('SELECT 1 FROM biodiversity_reports WHERE species_id = ? LIMIT 1', [req.params.species_id]);
+    if (inUse.length) {
       return res.status(409).json({ error: 'Cannot delete species that is referenced by existing reports' });
     }
-    const species = await Species.findByIdAndDelete(req.params.species_id);
-    if (!species) return res.status(404).json({ error: 'Species not found' });
+    const [result] = await pool.query('DELETE FROM species WHERE species_id = ?', [req.params.species_id]);
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Species not found' });
     return res.json({ message: 'Species deleted' });
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -102,10 +109,13 @@ async function createCategory(req, res) {
     const { category_name, description, icon, sdg_goal } = req.body;
     if (!category_name) return res.status(422).json({ error: 'category_name is required' });
 
-    const cat = await Category.create({ category_name, description: description || '', icon: icon || '', sdg_goal: sdg_goal || '' });
-    return res.status(201).json({ category_id: cat._id, category_name: cat.category_name, icon: cat.icon, sdg_goal: cat.sdg_goal });
+    const [result] = await pool.query(
+      'INSERT INTO categories (category_name, description, icon, sdg_goal) VALUES (?, ?, ?, ?)',
+      [category_name, description || '', icon || '', sdg_goal || '']
+    );
+    return res.status(201).json({ category_id: result.insertId, category_name, icon: icon || '', sdg_goal: sdg_goal || '' });
   } catch (err) {
-    if (err.code === 11000) return res.status(409).json({ error: 'Category name already exists' });
+    if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'Category name already exists' });
     return res.status(500).json({ error: err.message });
   }
 }
@@ -115,28 +125,36 @@ async function createCategory(req, res) {
 async function getPendingReports(req, res) {
   try {
     const { limit = 50, offset = 0 } = req.query;
-    const reports = await BiodiversityReport.find({ report_status: 'pending' })
-      .populate('user_id',     'user_name user_type')
-      .populate('species_id',  'species_name scientific_name')
-      .populate('category_id', 'category_name')
-      .sort({ timestamp: 1 })
-      .skip(parseInt(offset))
-      .limit(parseInt(limit))
-      .lean();
+    const lim = Math.max(0, parseInt(limit)  || 50);
+    const off = Math.max(0, parseInt(offset) || 0);
 
-    const sightings = reports.map(r => ({
-      report_id:       r._id,
-      user_id:         r.user_id?._id,
-      user_name:       r.user_id?.user_name,
-      user_type:       r.user_id?.user_type,
-      species_name:    r.species_id?.species_name,
-      scientific_name: r.species_id?.scientific_name,
-      category_name:   r.category_id?.category_name,
+    const [rows] = await pool.query(
+      `SELECT r.report_id, r.user_id, r.latitude, r.longitude, r.photo_url, r.notes, r.timestamp,
+              u.user_name, u.user_type,
+              s.species_name, s.scientific_name,
+              c.category_name
+       FROM biodiversity_reports r
+       LEFT JOIN users u      ON u.user_id     = r.user_id
+       LEFT JOIN species s    ON s.species_id  = r.species_id
+       LEFT JOIN categories c ON c.category_id = r.category_id
+       WHERE r.report_status = 'pending'
+       ORDER BY r.timestamp ASC
+       LIMIT ${lim} OFFSET ${off}`
+    );
+
+    const sightings = rows.map(r => ({
+      report_id:       r.report_id,
+      user_id:         r.user_id,
+      user_name:       r.user_name,
+      user_type:       r.user_type,
+      species_name:    r.species_name,
+      scientific_name: r.scientific_name,
+      category_name:   r.category_name,
       photo_url:       r.photo_url,
       notes:           r.notes,
       timestamp:       r.timestamp,
-      latitude:        r.location?.coordinates[1],
-      longitude:       r.location?.coordinates[0],
+      latitude:        r.latitude,
+      longitude:       r.longitude,
     }));
     return res.json({ sightings, total: sightings.length });
   } catch (err) {
@@ -148,18 +166,17 @@ async function getPendingReports(req, res) {
 
 async function getAdminStats(req, res) {
   try {
-    const [totalUsers, totalReports, pendingCount, verifiedCount, rejectedCount, totalSpecies] = await Promise.all([
-      User.countDocuments({ user_type: { $ne: 'admin' } }),
-      BiodiversityReport.countDocuments(),
-      BiodiversityReport.countDocuments({ report_status: 'pending' }),
-      BiodiversityReport.countDocuments({ report_status: 'verified' }),
-      BiodiversityReport.countDocuments({ report_status: 'rejected' }),
-      require('../models/Species').countDocuments(),
-    ]);
+    const [[{ total_users }]]   = await pool.query("SELECT COUNT(*) AS total_users FROM users WHERE user_type <> 'admin'");
+    const [[{ total_reports }]] = await pool.query('SELECT COUNT(*) AS total_reports FROM biodiversity_reports');
+    const [[{ pending }]]       = await pool.query("SELECT COUNT(*) AS pending FROM biodiversity_reports WHERE report_status = 'pending'");
+    const [[{ verified }]]      = await pool.query("SELECT COUNT(*) AS verified FROM biodiversity_reports WHERE report_status = 'verified'");
+    const [[{ rejected }]]      = await pool.query("SELECT COUNT(*) AS rejected FROM biodiversity_reports WHERE report_status = 'rejected'");
+    const [[{ total_species }]] = await pool.query('SELECT COUNT(*) AS total_species FROM species');
+
     return res.json({
-      reports: { total: totalReports, pending: pendingCount, verified: verifiedCount, rejected: rejectedCount },
-      users:   { total: totalUsers },
-      species: { total: totalSpecies },
+      reports: { total: total_reports, pending, verified, rejected },
+      users:   { total: total_users },
+      species: { total: total_species },
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });

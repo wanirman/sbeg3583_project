@@ -111,14 +111,40 @@
     });
   });
 
+  // Identifier (username or email) of the account currently being verified
+  let pendingVerifyId = null;
+
+  // Show only one of the auth forms (login / register / verify)
+  function showAuthForm(name) {
+    document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(`${name}-form`).classList.add('active');
+    if (name === 'login' || name === 'register') {
+      document.querySelector(`.auth-tab[data-tab="${name}"]`)?.classList.add('active');
+    }
+  }
+
+  // Switch to the OTP screen for the given account.
+  // `info` may carry { email, dev_code, email_sent } from the server.
+  function showVerify(identifier, info = {}) {
+    pendingVerifyId = identifier;
+    document.getElementById('verify-email').textContent = info.email || identifier || 'your email';
+    const dev = document.getElementById('verify-devcode');
+    if (info.dev_code) {
+      dev.innerHTML = `Dev mode (no email server): your code is <strong>${info.dev_code}</strong>`;
+      dev.classList.remove('hidden');
+    } else {
+      dev.textContent = '';
+      dev.classList.add('hidden');
+    }
+    document.getElementById('verify-code').value = '';
+    document.getElementById('verify-error').textContent = '';
+    showAuthForm('verify');
+  }
+
   // Auth tab switching
   document.querySelectorAll('.auth-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById(`${tab.dataset.tab}-form`).classList.add('active');
-    });
+    tab.addEventListener('click', () => showAuthForm(tab.dataset.tab));
   });
 
   // Login form
@@ -126,31 +152,70 @@
     e.preventDefault();
     const err = document.getElementById('login-error');
     err.textContent = '';
-    const email = document.getElementById('login-email').value;
-    const pwd   = document.getElementById('login-password').value;
+    const identifier = document.getElementById('login-identifier').value.trim();
+    const pwd        = document.getElementById('login-password').value;
     try {
-      await BioAPI.login(email, pwd);
+      await BioAPI.login(identifier, pwd);
       showApp();
     } catch (ex) {
+      // Unverified accounts get bounced to the OTP screen (server re-sends a code)
+      if (ex.data?.requires_verification) {
+        showVerify(ex.data.email || identifier, ex.data);
+        return;
+      }
       err.textContent = ex.message || 'Login failed';
     }
   });
 
-  // Register form
+  // Register form — creates the account, then moves to OTP verification
   document.getElementById('register-form').addEventListener('submit', async e => {
     e.preventDefault();
     const err  = document.getElementById('register-error');
     err.textContent = '';
-    const user_name  = document.getElementById('reg-username').value;
-    const email      = document.getElementById('reg-email').value;
+    const user_name  = document.getElementById('reg-username').value.trim();
+    const email      = document.getElementById('reg-email').value.trim();
     const password   = document.getElementById('reg-password').value;
     const user_type  = document.getElementById('reg-type').value;
     try {
-      await BioAPI.register(user_name, email, password, user_type);
-      showApp();
+      const info = await BioAPI.register(user_name, email, password, user_type);
+      showVerify(email, info);
     } catch (ex) {
       err.textContent = ex.message || 'Registration failed';
     }
+  });
+
+  // Verify form — submit the OTP code
+  document.getElementById('verify-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const err = document.getElementById('verify-error');
+    err.textContent = '';
+    const code = document.getElementById('verify-code').value.trim();
+    try {
+      await BioAPI.verifyEmail(pendingVerifyId, code);
+      pendingVerifyId = null;
+      showApp();
+    } catch (ex) {
+      err.textContent = ex.message || 'Verification failed';
+    }
+  });
+
+  // Resend OTP code
+  document.getElementById('btn-resend-code').addEventListener('click', async () => {
+    const err = document.getElementById('verify-error');
+    err.textContent = '';
+    try {
+      const info = await BioAPI.resendCode(pendingVerifyId);
+      showVerify(pendingVerifyId, info);
+      if (!info.dev_code) err.textContent = 'A new code has been sent.';
+    } catch (ex) {
+      err.textContent = ex.message || 'Could not resend code';
+    }
+  });
+
+  // Back to login from the verify screen
+  document.getElementById('btn-verify-back').addEventListener('click', () => {
+    pendingVerifyId = null;
+    showAuthForm('login');
   });
 
   // Bottom navigation

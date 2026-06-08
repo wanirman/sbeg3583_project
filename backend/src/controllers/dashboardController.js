@@ -1,42 +1,49 @@
-const BiodiversityReport = require('../models/BiodiversityReport');
-const Category = require('../models/Category');
-const Species  = require('../models/Species');
-const User     = require('../models/User');
+const { pool } = require('../config/database');
 
 async function getStats(req, res) {
   try {
-    const [total, verified, pending, aquaticCat] = await Promise.all([
-      BiodiversityReport.countDocuments(),
-      BiodiversityReport.countDocuments({ report_status: 'verified' }),
-      BiodiversityReport.countDocuments({ report_status: 'pending' }),
-      Category.findOne({ category_name: 'Aquatic' }).lean(),
-    ]);
+    const [[{ total }]]    = await pool.query('SELECT COUNT(*) AS total FROM biodiversity_reports');
+    const [[{ verified }]] = await pool.query("SELECT COUNT(*) AS verified FROM biodiversity_reports WHERE report_status = 'verified'");
+    const [[{ pending }]]  = await pool.query("SELECT COUNT(*) AS pending FROM biodiversity_reports WHERE report_status = 'pending'");
 
-    const [observerCount, speciesCount, byCategory, monthlyTrend, sdg14] = await Promise.all([
-      BiodiversityReport.distinct('user_id').then(ids => ids.length),
-      BiodiversityReport.distinct('species_id').then(ids => ids.length),
-      BiodiversityReport.aggregate([
-        { $match: { report_status: 'verified' } },
-        { $group: { _id: '$category_id', count: { $sum: 1 } } },
-        { $lookup: { from: 'categories', localField: '_id', foreignField: '_id', as: 'cat' } },
-        { $unwind: '$cat' },
-        { $project: { category_name: '$cat.category_name', count: 1 } },
-      ]),
-      BiodiversityReport.aggregate([
-        { $match: { report_status: 'verified' } },
-        { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$timestamp' } }, count: { $sum: 1 } } },
-        { $sort: { _id: -1 } },
-        { $limit: 12 },
-        { $project: { month: '$_id', count: 1, _id: 0 } },
-      ]),
-      aquaticCat ? BiodiversityReport.countDocuments({ report_status: 'verified', category_id: aquaticCat._id }) : 0,
-    ]);
+    const [[observer]]  = await pool.query('SELECT COUNT(DISTINCT user_id) AS c FROM biodiversity_reports');
+    const [[speciesCt]] = await pool.query('SELECT COUNT(DISTINCT species_id) AS c FROM biodiversity_reports');
+
+    const [byCategory] = await pool.query(
+      `SELECT c.category_name, COUNT(*) AS count
+       FROM biodiversity_reports r
+       JOIN categories c ON c.category_id = r.category_id
+       WHERE r.report_status = 'verified'
+       GROUP BY r.category_id, c.category_name`
+    );
+
+    const [monthlyTrend] = await pool.query(
+      `SELECT DATE_FORMAT(timestamp, '%Y-%m') AS month, COUNT(*) AS count
+       FROM biodiversity_reports
+       WHERE report_status = 'verified'
+       GROUP BY month
+       ORDER BY month DESC
+       LIMIT 12`
+    );
+
+    const [[sdg14row]] = await pool.query(
+      `SELECT COUNT(*) AS c
+       FROM biodiversity_reports r
+       JOIN categories c ON c.category_id = r.category_id
+       WHERE r.report_status = 'verified' AND c.category_name = 'Aquatic'`
+    );
 
     return res.json({
-      totals: { total_reports: total, verified_reports: verified, pending_reports: pending, total_observers: observerCount, species_count: speciesCount },
+      totals: {
+        total_reports:   total,
+        verified_reports: verified,
+        pending_reports:  pending,
+        total_observers:  observer.c,
+        species_count:    speciesCt.c,
+      },
       byCategory: byCategory.map(c => ({ category_name: c.category_name, count: c.count })),
-      monthlyTrend: monthlyTrend.reverse(),
-      sdg14: { sdg14_count: sdg14 },
+      monthlyTrend: monthlyTrend.map(m => ({ month: m.month, count: m.count })).reverse(),
+      sdg14: { sdg14_count: sdg14row.c },
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -45,19 +52,15 @@ async function getStats(req, res) {
 
 async function getLeaderboard(req, res) {
   try {
-    const users = await User.find({ user_type: { $ne: 'admin' } })
-      .sort({ points: -1 })
-      .limit(20)
-      .lean();
-
-    const leaderboard = await Promise.all(users.map(async u => ({
-      user_id:        u._id,
-      user_name:      u.user_name,
-      user_type:      u.user_type,
-      points:         u.points,
-      verified_count: await BiodiversityReport.countDocuments({ user_id: u._id, report_status: 'verified' }),
-    })));
-
+    const [leaderboard] = await pool.query(
+      `SELECT u.user_id, u.user_name, u.user_type, u.points,
+              (SELECT COUNT(*) FROM biodiversity_reports r
+               WHERE r.user_id = u.user_id AND r.report_status = 'verified') AS verified_count
+       FROM users u
+       WHERE u.user_type <> 'admin'
+       ORDER BY u.points DESC
+       LIMIT 20`
+    );
     return res.json({ leaderboard });
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -66,8 +69,16 @@ async function getLeaderboard(req, res) {
 
 async function getCategories(req, res) {
   try {
-    const categories = await Category.find().sort({ category_name: 1 }).lean();
-    return res.json({ categories: categories.map(c => ({ category_id: c._id, category_name: c.category_name, description: c.description, icon: c.icon || '', sdg_goal: c.sdg_goal || '' })) });
+    const [categories] = await pool.query('SELECT * FROM categories ORDER BY category_name ASC');
+    return res.json({
+      categories: categories.map(c => ({
+        category_id:   c.category_id,
+        category_name: c.category_name,
+        description:   c.description,
+        icon:          c.icon || '',
+        sdg_goal:      c.sdg_goal || '',
+      })),
+    });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -75,9 +86,30 @@ async function getCategories(req, res) {
 
 async function getSpecies(req, res) {
   try {
-    const filter = req.query.category_id ? { category_id: req.query.category_id } : {};
-    const rows = await Species.find(filter).populate('category_id', 'category_name').sort({ species_name: 1 }).lean();
-    return res.json({ species: rows.map(s => ({ species_id: s._id, species_name: s.species_name, scientific_name: s.scientific_name, category_id: s.category_id?._id, category_name: s.category_id?.category_name, description: s.description })) });
+    const where = [];
+    const params = [];
+    if (req.query.category_id) { where.push('s.category_id = ?'); params.push(req.query.category_id); }
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+    const [rows] = await pool.query(
+      `SELECT s.species_id, s.species_name, s.scientific_name, s.description,
+              s.category_id, c.category_name
+       FROM species s
+       LEFT JOIN categories c ON c.category_id = s.category_id
+       ${whereSql}
+       ORDER BY s.species_name ASC`,
+      params
+    );
+    return res.json({
+      species: rows.map(s => ({
+        species_id:      s.species_id,
+        species_name:    s.species_name,
+        scientific_name: s.scientific_name,
+        category_id:     s.category_id,
+        category_name:   s.category_name,
+        description:     s.description,
+      })),
+    });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -85,29 +117,29 @@ async function getSpecies(req, res) {
 
 async function getTripleHelix(req, res) {
   try {
-    const [totalVerified, aquaticCat] = await Promise.all([
-      BiodiversityReport.countDocuments({ report_status: 'verified' }),
-      Category.findOne({ category_name: 'Aquatic' }).lean(),
-    ]);
+    const [[{ total_verified }]] = await pool.query("SELECT COUNT(*) AS total_verified FROM biodiversity_reports WHERE report_status = 'verified'");
+    const [[{ species_diversity }]] = await pool.query("SELECT COUNT(DISTINCT species_id) AS species_diversity FROM biodiversity_reports WHERE report_status = 'verified'");
+    const [[sdg14row]] = await pool.query(
+      `SELECT COUNT(*) AS c
+       FROM biodiversity_reports r
+       JOIN categories c ON c.category_id = r.category_id
+       WHERE r.report_status = 'verified' AND c.category_name = 'Aquatic'`
+    );
 
-    const [speciesDiversity, topCommunity, sdg14Count] = await Promise.all([
-      BiodiversityReport.distinct('species_id', { report_status: 'verified' }).then(ids => ids.length),
-      User.find({ user_type: { $ne: 'admin' } }).sort({ points: -1 }).limit(5).lean(),
-      aquaticCat ? BiodiversityReport.countDocuments({ report_status: 'verified', category_id: aquaticCat._id }) : 0,
-    ]);
-
-    const community = await Promise.all(topCommunity.map(async u => ({
-      user_id:   u._id,
-      user_name: u.user_name,
-      user_type: u.user_type,
-      points:    u.points,
-      sightings: await BiodiversityReport.countDocuments({ user_id: u._id, report_status: 'verified' }),
-    })));
+    const [community] = await pool.query(
+      `SELECT u.user_id, u.user_name, u.user_type, u.points,
+              (SELECT COUNT(*) FROM biodiversity_reports r
+               WHERE r.user_id = u.user_id AND r.report_status = 'verified') AS sightings
+       FROM users u
+       WHERE u.user_type <> 'admin'
+       ORDER BY u.points DESC
+       LIMIT 5`
+    );
 
     return res.json({
-      academic:   { total_verified: totalVerified, species_diversity_index: speciesDiversity },
+      academic:   { total_verified, species_diversity_index: species_diversity },
       community,
-      government: { sdg14_count: sdg14Count },
+      government: { sdg14_count: sdg14row.c },
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });

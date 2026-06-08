@@ -8,6 +8,7 @@ const BioReport = (() => {
   async function init() {
     await loadCategories();
     attachListeners();
+    warmReferenceCache();
   }
 
   async function loadCategories() {
@@ -20,7 +21,18 @@ const BioReport = (() => {
         opt.textContent = c.category_name;
         sel.appendChild(opt);
       });
-    } catch { /* offline — categories won't load */ }
+    } catch { /* offline — categories come from cache via the API layer */ }
+  }
+
+  // Pre-fetch the species list for every category while online so the whole
+  // report form (category → species) keeps working offline-first.
+  async function warmReferenceCache() {
+    if (!navigator.onLine) return;
+    const sel = document.getElementById('report-category');
+    const ids = [...sel.options].map(o => o.value).filter(Boolean);
+    for (const id of ids) {
+      try { await BioAPI.getSpecies(id); } catch { /* ignore — best effort */ }
+    }
   }
 
   function attachListeners() {
@@ -291,7 +303,12 @@ const BioReport = (() => {
     btn.disabled = true;
 
     if (!navigator.onLine) {
-      await BioDB.queueSighting({ category_id, species_id, latitude: lat, longitude: lng, notes, timestamp: new Date().toISOString() });
+      // Store the compressed photo blob too, so the sighting syncs complete (with image) later.
+      await BioDB.queueSighting({ category_id, species_id, latitude: lat, longitude: lng, notes, photo: compressedBlob || null, timestamp: new Date().toISOString() });
+      // Ask the SW for a background sync as soon as connectivity returns
+      if ('serviceWorker' in navigator && 'SyncManager' in window) {
+        try { const reg = await navigator.serviceWorker.ready; await reg.sync.register('sync-sightings'); } catch { /* not supported */ }
+      }
       success.textContent = 'Saved offline. Will sync when connected.';
       success.classList.remove('hidden');
       resetForm();
