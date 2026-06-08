@@ -9,10 +9,17 @@ const { connectDB } = require('./config/database');
 
 const app    = express();
 const server = http.createServer(app);
-const io     = new Server(server, { cors: { origin: '*', methods: ['GET', 'POST'] } });
+
+// CORS origin(s): '*' by default. Set CORS_ORIGIN to a comma-separated allowlist
+// (e.g. https://biodiv.wanirman.dev) to lock down in production / on the OLS VPS.
+const corsOrigin = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
+  : '*';
+
+const io     = new Server(server, { cors: { origin: corsOrigin, methods: ['GET', 'POST'] } });
 
 app.set('io', io);
-app.use(cors());
+app.use(cors({ origin: corsOrigin }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
