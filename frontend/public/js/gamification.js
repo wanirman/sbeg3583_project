@@ -18,10 +18,12 @@ const BioGamification = (() => {
   }
 
   function renderProfile(profile) {
-    document.getElementById('profile-name').textContent    = profile.user_name;
-    document.getElementById('profile-type').textContent    = profile.user_type;
-    document.getElementById('profile-points').textContent  = profile.points;
+    document.getElementById('profile-name').textContent    = profile.user_name || '—';
+    document.getElementById('profile-type').textContent    = profile.user_type || '—';
+    document.getElementById('profile-points').textContent  = profile.points ?? 0;
     document.getElementById('profile-reports').textContent = profile.total_reports || 0;
+    const emailEl = document.getElementById('profile-email');
+    if (emailEl) emailEl.textContent = profile.email || '';
 
     const container = document.getElementById('badges-container');
     container.innerHTML = '';

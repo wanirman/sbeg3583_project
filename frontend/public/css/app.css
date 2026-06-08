@@ -447,3 +447,6 @@ h1, h2, h3, h4,
 .offline-dl-status { position:absolute; bottom:14px; left:50%; transform:translateX(-50%); z-index:1000;
   background:rgba(20,40,25,.85); color:#fff; padding:.45rem .85rem; border-radius:18px;
   font-size:.8rem; box-shadow:0 2px 8px rgba(0,0,0,.35); pointer-events:none; }
+
+/* Email line under the profile name */
+.profile-email { color:#6b7a6b; font-size:.85rem; margin:.1rem 0 .5rem; word-break:break-all; }
