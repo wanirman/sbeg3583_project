@@ -35,12 +35,15 @@ html, body {
   color: var(--text-dark);
   overflow: hidden;
   background-color: var(--bg);
-  /* subtle paper grain: faint moss dot-grid over cream */
+  /* subtle paper grain: faint moss dot-grid over cream, plus scattered
+     leaf/animal doodles so the page doesn't feel blank */
   background-image:
     radial-gradient(rgba(107,142,78,.06) 1px, transparent 1.4px),
-    radial-gradient(rgba(122,92,62,.05) 1px, transparent 1.4px);
-  background-size: 18px 18px, 18px 18px;
-  background-position: 0 0, 9px 9px;
+    radial-gradient(rgba(122,92,62,.05) 1px, transparent 1.4px),
+    url('/img/doodles.svg');
+  background-size: 18px 18px, 18px 18px, 360px 360px;
+  background-position: 0 0, 9px 9px, center;
+  background-repeat: repeat, repeat, repeat;
 }
 
 /* ── Serif headings (field-journal voice) ── */
@@ -348,10 +351,12 @@ h1, h2, h3, h4,
   font-family: var(--font-serif); color: var(--green-dark); letter-spacing: .2px;
 }
 
-/* Cards — pressed-paper with a moss keyline */
+/* Cards — pressed-paper with a moss keyline.
+   .leaderboard-list and .my-records-section are intentionally excluded: they
+   are plain wrappers around their own inner cards, so an outer keyline reads
+   as a redundant double box. */
 .stat-card, .chart-section, .helix-card, .profile-card,
-.badges-section, .pending-section, .account-section, .my-records-section,
-.leaderboard-list, .report-item {
+.badges-section, .pending-section, .account-section, .report-item {
   border: 1px solid rgba(107,142,78,.30);
 }
 .stat-card { position: relative; overflow: hidden; }

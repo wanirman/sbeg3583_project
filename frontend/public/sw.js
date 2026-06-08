@@ -1,4 +1,4 @@
-const CACHE_NAME = 'biodiversity-pwa-v14';
+const CACHE_NAME = 'biodiversity-pwa-v15';
 const TILE_CACHE = 'map-tiles-v1';
 const OFFLINE_URL = '/offline.html';
 
@@ -15,6 +15,7 @@ const PRECACHE_ASSETS = [
   '/js/chat.js',
   '/js/gamification.js',
   '/manifest.json',
+  '/img/doodles.svg',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   // Leaflet (vendored locally so the map works fully offline)
