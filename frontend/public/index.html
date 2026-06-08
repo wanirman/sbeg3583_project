@@ -188,46 +188,63 @@
           <div><strong id="profile-reports">0</strong><small>Verified</small></div>
         </div>
       </div>
-      <div class="badges-section">
-        <h3>Badges</h3>
-        <div id="badges-container" class="badges-grid"></div>
-      </div>
-      <div class="pending-section">
-        <h3>Offline Queue <span id="pending-count" class="count-chip">0</span></h3>
-        <button id="btn-force-sync" class="btn-secondary btn-full">Sync Now</button>
-      </div>
+      <details class="acc-card" open>
+        <summary>Badges</summary>
+        <div class="acc-body">
+          <div id="badges-container" class="badges-grid"></div>
+        </div>
+      </details>
+
+      <details class="acc-card">
+        <summary>Offline Queue <span id="pending-count" class="count-chip">0</span></summary>
+        <div class="acc-body">
+          <button id="btn-force-sync" class="btn-secondary btn-full">Sync Now</button>
+        </div>
+      </details>
+
       <div class="install-section">
         <button id="btn-install-profile" class="btn-primary btn-full install-btn hidden"><svg class="icon"><use href="#i-download"></use></svg> Install App on this Device</button>
         <p class="ios-install-hint hidden"><svg class="icon"><use href="#i-smartphone"></use></svg> On iPhone/iPad: tap <strong>Share <svg class="icon" style="vertical-align:-.2em"><use href="#i-share"></use></svg></strong> then <strong>Add to Home Screen</strong></p>
       </div>
 
-      <div class="account-section">
-        <h3>Account Settings</h3>
-        <form id="email-form" class="account-form">
-          <label>Change Email</label>
-          <input type="email" id="ae-new-email" placeholder="New email address" required />
-          <input type="password" id="ae-password" placeholder="Current password" required />
-          <button type="submit" class="btn-secondary btn-full">Update Email</button>
-          <p id="email-msg" class="account-msg"></p>
-        </form>
-        <form id="password-form" class="account-form">
-          <label>Change Password</label>
-          <input type="password" id="ap-current" placeholder="Current password" required />
-          <input type="password" id="ap-new" placeholder="New password (min 6 chars)" required minlength="6" />
-          <button type="submit" class="btn-secondary btn-full">Update Password</button>
-          <p id="password-msg" class="account-msg"></p>
-        </form>
-      </div>
-      <div class="my-records-section">
-        <h3>My Records</h3>
-        <div class="record-filter-row">
-          <button class="filter-chip active" data-status="">All</button>
-          <button class="filter-chip" data-status="pending">Pending</button>
-          <button class="filter-chip" data-status="verified">Verified</button>
-          <button class="filter-chip" data-status="rejected">Rejected</button>
+      <details class="acc-card">
+        <summary>Account Settings</summary>
+        <div class="acc-body">
+          <form id="email-form" class="account-form">
+            <label>Change Email</label>
+            <input type="email" id="ae-new-email" placeholder="New email address" required />
+            <input type="password" id="ae-password" placeholder="Current password" required />
+            <button type="submit" class="btn-secondary btn-full">Update Email</button>
+            <p id="email-msg" class="account-msg"></p>
+          </form>
+          <form id="password-form" class="account-form">
+            <label>Change Password</label>
+            <input type="password" id="ap-current" placeholder="Current password" required />
+            <input type="password" id="ap-new" placeholder="New password (min 6 chars)" required minlength="6" />
+            <button type="submit" class="btn-secondary btn-full">Update Password</button>
+            <p id="password-msg" class="account-msg"></p>
+          </form>
+          <div class="danger-zone">
+            <label>Delete Account</label>
+            <p class="danger-hint">Permanently removes your account and all your reports. This cannot be undone.</p>
+            <button type="button" id="btn-delete-account" class="btn-danger btn-full"><svg class="icon"><use href="#i-trash-2"></use></svg> Delete My Account</button>
+            <p id="delete-msg" class="account-msg"></p>
+          </div>
         </div>
-        <div id="my-reports-list"></div>
-      </div>
+      </details>
+
+      <details class="acc-card">
+        <summary>My Records</summary>
+        <div class="acc-body">
+          <div class="record-filter-row">
+            <button class="filter-chip active" data-status="">All</button>
+            <button class="filter-chip" data-status="pending">Pending</button>
+            <button class="filter-chip" data-status="verified">Verified</button>
+            <button class="filter-chip" data-status="rejected">Rejected</button>
+          </div>
+          <div id="my-reports-list"></div>
+        </div>
+      </details>
     </div>
 
   </main>

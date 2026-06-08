@@ -65,6 +65,10 @@ const BioAPI = (() => {
     return request('PATCH', '/auth/password', { current_password, new_password });
   }
 
+  async function deleteAccount(password) {
+    return request('DELETE', '/auth/account', { password });
+  }
+
   async function submitSighting(formData) {
     return request('POST', '/sighting', formData, true);
   }
@@ -178,7 +182,7 @@ const BioAPI = (() => {
     return null;
   }
 
-  return { getToken, setToken, clearToken, getUser, setUser, login, register, verifyEmail, resendCode, getProfile, updateEmail, updatePassword, submitSighting, syncBatch, getSightingsGeoJSON, getCategories, getSpecies, getDashboardStats, getLeaderboard, getTripleHelix, getMyReports, getChatMessages, postChatMessage, geocodePlacename, searchTaxa, resolveSpecies, identifyPhoto };
+  return { getToken, setToken, clearToken, getUser, setUser, login, register, verifyEmail, resendCode, getProfile, updateEmail, updatePassword, deleteAccount, submitSighting, syncBatch, getSightingsGeoJSON, getCategories, getSpecies, getDashboardStats, getLeaderboard, getTripleHelix, getMyReports, getChatMessages, postChatMessage, geocodePlacename, searchTaxa, resolveSpecies, identifyPhoto };
 })();
 
 window.BioAPI = BioAPI;

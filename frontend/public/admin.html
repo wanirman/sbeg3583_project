@@ -6,7 +6,15 @@
   <title>Admin – BioReport</title>
   <link rel="stylesheet" href="/css/app.css" />
   <style>
-    body { overflow: auto; background: #f4f7f5; font-family: -apple-system, sans-serif; margin: 0; }
+    /* Match the main app's naturalist theme: cream paper + leaf/animal doodles */
+    body { overflow: auto; margin: 0; background-color: var(--bg);
+      background-image:
+        radial-gradient(rgba(107,142,78,.06) 1px, transparent 1.4px),
+        radial-gradient(rgba(122,92,62,.05) 1px, transparent 1.4px),
+        url('/img/doodles.svg');
+      background-size: 18px 18px, 18px 18px, 360px 360px;
+      background-position: 0 0, 9px 9px, center;
+      background-attachment: fixed; }
     .admin-header { background: #1a3c2e; color: white; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
     .admin-header h1 { font-size: 1.2rem; margin: 0; }
     .admin-wrap { max-width: 960px; margin: 0 auto; padding: 1.5rem; }

@@ -267,4 +267,39 @@ async function updatePassword(req, res) {
   }
 }
 
-module.exports = { register, verifyEmail, resendCode, login, getProfile, updateEmail, updatePassword };
+// Permanently delete the logged-in user's own account (requires password).
+async function deleteAccount(req, res) {
+  try {
+    const { password } = req.body;
+    if (!password) return res.status(422).json({ error: 'Your password is required to delete your account' });
+
+    const [users] = await pool.query('SELECT * FROM users WHERE user_id = ?', [req.user.user_id]);
+    const user = users[0];
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!(await bcrypt.compare(password, user.password_hash))) {
+      return res.status(401).json({ error: 'Password is incorrect' });
+    }
+
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+      // Detach references the user owns elsewhere, then remove their own rows.
+      await conn.query('UPDATE biodiversity_reports SET reviewed_by = NULL WHERE reviewed_by = ?', [user.user_id]);
+      await conn.query('DELETE FROM chat_messages WHERE sender_id = ?', [user.user_id]);
+      await conn.query('DELETE FROM biodiversity_reports WHERE user_id = ?', [user.user_id]);
+      await conn.query('DELETE FROM user_badges WHERE user_id = ?', [user.user_id]);
+      await conn.query('DELETE FROM users WHERE user_id = ?', [user.user_id]);
+      await conn.commit();
+    } catch (e) {
+      await conn.rollback();
+      throw e;
+    } finally {
+      conn.release();
+    }
+    return res.json({ message: 'Account deleted' });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+module.exports = { register, verifyEmail, resendCode, login, getProfile, updateEmail, updatePassword, deleteAccount };

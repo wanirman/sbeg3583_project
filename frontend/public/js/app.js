@@ -285,6 +285,23 @@
     }
   });
 
+  // Delete account (danger zone) — requires password confirmation
+  document.getElementById('btn-delete-account').addEventListener('click', async () => {
+    const msg = document.getElementById('delete-msg');
+    msg.textContent = ''; msg.className = 'account-msg';
+    const pwd = prompt('This permanently deletes your account and all your reports.\n\nEnter your password to confirm:');
+    if (!pwd) return;
+    try {
+      await BioAPI.deleteAccount(pwd);
+      BioAPI.clearToken();
+      alert('Your account has been deleted.');
+      showAuth();
+    } catch (ex) {
+      msg.textContent = ex.message || 'Could not delete account';
+      msg.classList.add('err');
+    }
+  });
+
   // Force sync button
   document.getElementById('btn-force-sync').addEventListener('click', async () => {
     if (!navigator.onLine) { alert('No internet connection.'); return; }

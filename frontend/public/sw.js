@@ -1,4 +1,4 @@
-const CACHE_NAME = 'biodiversity-pwa-v15';
+const CACHE_NAME = 'biodiversity-pwa-v16';
 const TILE_CACHE = 'map-tiles-v1';
 const OFFLINE_URL = '/offline.html';
 
@@ -52,15 +52,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // App-shell for ALL page navigations: serve the cached index.html so a
-  // logged-in user always boots straight into the app offline (the in-app
-  // offline UI then takes over). offline.html is only a last resort.
+  // App-shell for page navigations so a logged-in user boots straight into the
+  // app offline. The admin page is a SEPARATE document — never replace it with
+  // the app shell.
   if (request.mode === 'navigate') {
-    event.respondWith(
-      caches.match('/index.html').then(cached =>
-        cached || fetch(request).catch(() => caches.match(OFFLINE_URL))
-      )
-    );
+    event.respondWith((async () => {
+      const exact = await caches.match(request);     // e.g. a cached /admin.html
+      if (exact) return exact;
+      if (url.pathname.startsWith('/admin')) {        // admin is its own document
+        try { return await fetch(request); } catch { return caches.match(OFFLINE_URL); }
+      }
+      const shell = await caches.match('/index.html');
+      return shell || fetch(request).catch(() => caches.match(OFFLINE_URL));
+    })());
     return;
   }
 
