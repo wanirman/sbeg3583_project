@@ -7,7 +7,14 @@ const BioGamification = (() => {
       const profile = await BioAPI.getProfile();
       document.getElementById('user-points').textContent = `${profile.points} pts`;
       renderProfile(profile);
-    } catch { /* offline */ }
+    } catch {
+      // Offline — fall back to the profile cached locally at last login/sync
+      const cached = BioAPI.getUser();
+      if (cached) {
+        if (cached.points != null) document.getElementById('user-points').textContent = `${cached.points} pts`;
+        renderProfile(cached);
+      }
+    }
   }
 
   function renderProfile(profile) {

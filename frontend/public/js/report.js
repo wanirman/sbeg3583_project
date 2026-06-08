@@ -223,11 +223,12 @@ const BioReport = (() => {
         BioMap.panTo(pos.coords.latitude, pos.coords.longitude);
       },
       err => {
-        alert('Could not get GPS location: ' + err.message);
+        alert('Could not get GPS location: ' + err.message + '\nTip: outdoors with a clear sky view, GPS works even without internet — it may just take a few seconds.');
         btn.innerHTML = `${ICON('map-pin')} GPS`;
         btn.disabled = false;
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      // Longer timeout + accept a recent fix: offline (no A-GPS) the first lock can be slow.
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }
     );
   }
 

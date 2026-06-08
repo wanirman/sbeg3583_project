@@ -1,4 +1,4 @@
-const CACHE_NAME = 'biodiversity-pwa-v12';
+const CACHE_NAME = 'biodiversity-pwa-v13';
 const TILE_CACHE = 'map-tiles-v1';
 const OFFLINE_URL = '/offline.html';
 
@@ -48,6 +48,18 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   if (url.pathname.startsWith('/api/')) {
+    return;
+  }
+
+  // App-shell for ALL page navigations: serve the cached index.html so a
+  // logged-in user always boots straight into the app offline (the in-app
+  // offline UI then takes over). offline.html is only a last resort.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      caches.match('/index.html').then(cached =>
+        cached || fetch(request).catch(() => caches.match(OFFLINE_URL))
+      )
+    );
     return;
   }
 

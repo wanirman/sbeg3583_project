@@ -26,10 +26,92 @@ const BioMap = (() => {
       maxZoom: 19,
     }).addTo(map);
 
-    addLocateControl();   // pin button under the +/- zoom buttons
+    addLocateControl();      // pin button under the +/- zoom buttons
+    addDownloadControl();     // "save this area for offline" button
     loadSightings();
-    locateUser();         // ask for current location and centre there
+    locateUser();             // ask for current location and centre there
     return map;
+  }
+
+  /* ── Offline basemap: pre-cache the tiles for the current view ──
+     Fetching each tile URL makes the service worker store it in TILE_CACHE,
+     so the basemap still renders with no connection. */
+  function lon2tile(lon, z) { return Math.floor((lon + 180) / 360 * Math.pow(2, z)); }
+  function lat2tile(lat, z) {
+    const r = lat * Math.PI / 180;
+    return Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * Math.pow(2, z));
+  }
+
+  function addDownloadControl() {
+    const Ctrl = L.Control.extend({
+      options: { position: 'topleft' },
+      onAdd() {
+        const c = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+        const a = L.DomUtil.create('a', '', c);
+        a.href = '#';
+        a.title = 'Save this map area for offline use';
+        a.setAttribute('role', 'button');
+        a.setAttribute('aria-label', 'Save map for offline');
+        a.innerHTML = '<svg class="icon"><use href="#i-download"></use></svg>';
+        L.DomEvent.on(a, 'click', L.DomEvent.stop);
+        L.DomEvent.on(a, 'click', downloadOfflineArea);
+        return c;
+      },
+    });
+    map.addControl(new Ctrl());
+  }
+
+  function dlStatus() {
+    let el = document.getElementById('offline-dl-status');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'offline-dl-status';
+      el.className = 'offline-dl-status';
+      el.hidden = true;
+      document.getElementById('map').appendChild(el);
+    }
+    return el;
+  }
+
+  async function downloadOfflineArea() {
+    if (!navigator.onLine) { alert('Connect to the internet first, then save the map for offline use.'); return; }
+    if (!map) return;
+
+    const b = map.getBounds();
+    const z0   = Math.max(13, Math.round(map.getZoom()));
+    const zMax = Math.min(17, z0 + 2);   // current view + 2 zoom levels deeper
+
+    const tiles = [];
+    for (let z = z0; z <= zMax; z++) {
+      const xMin = lon2tile(b.getWest(),  z), xMax = lon2tile(b.getEast(),  z);
+      const yMin = lat2tile(b.getNorth(), z), yMax = lat2tile(b.getSouth(), z);
+      for (let x = xMin; x <= xMax; x++)
+        for (let y = yMin; y <= yMax; y++)
+          tiles.push({ z, x, y });
+    }
+    if (tiles.length > 3000 &&
+        !confirm(`This will download ${tiles.length} map tiles. Zoom in to a smaller area for less. Continue?`)) return;
+
+    const status = dlStatus();
+    status.hidden = false;
+    status.textContent = `Saving map… 0/${tiles.length}`;
+
+    const queue = tiles.slice();
+    let done = 0, failed = 0;
+    const worker = async () => {
+      while (queue.length) {
+        const t = queue.shift();
+        const s = 'abc'[Math.abs(t.x + t.y) % 3];           // match Leaflet's subdomain choice
+        try { await fetch(`https://${s}.tile.openstreetmap.org/${t.z}/${t.x}/${t.y}.png`, { mode: 'cors' }); }
+        catch { failed++; }
+        done++;
+        if (done % 5 === 0 || done === tiles.length) status.textContent = `Saving map… ${done}/${tiles.length}`;
+      }
+    };
+    await Promise.all(Array.from({ length: 6 }, worker));   // 6 parallel downloads
+
+    status.textContent = `Map saved for offline (${tiles.length - failed}/${tiles.length} tiles).`;
+    setTimeout(() => { status.hidden = true; }, 4000);
   }
 
   // A Leaflet control button (top-left, below the zoom control) that zooms to the user
