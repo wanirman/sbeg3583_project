@@ -698,7 +698,7 @@ async function saveInatToken() {
     });
     msg.innerHTML = '<svg class="icon"><use href="#i-check"></use></svg> Token saved.'; msg.style.color = '#2f6043';
     document.getElementById('inat-token-input').value = '';
-    loadInatToken(); // refresh the status line
+    loadInatStatus(); // refresh the status line
   } catch (e) { msg.textContent = e.message; msg.style.color = '#c00'; }
 }
 
