@@ -421,7 +421,12 @@ h1, h2, h3, h4,
 .badge-item .icon { color: var(--accent); }
 
 /* Auth screen — field journal cover */
-.auth-screen, #auth-screen { background-color: var(--green-dark); }
+.auth-screen, #auth-screen {
+  background-color: var(--green-dark);
+  background-image: url('/img/doodles-light.svg');   /* leaf/animal doodles on the login screen */
+  background-size: 300px 300px;
+  background-position: center;
+}
 .auth-container { background: var(--white); border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.35); border: 1px solid rgba(122,92,62,.25); position: relative; }
 .auth-container::before, .auth-container::after {
   content: ""; position: absolute; width: 34px; height: 34px; opacity: .5;

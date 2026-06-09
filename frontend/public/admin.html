@@ -57,6 +57,10 @@
     .form-card input, .form-card select, .form-card textarea { width: 100%; box-sizing: border-box; padding: .55rem; border: 1.5px solid #ddd; border-radius: 7px; font-size: .9rem; }
     .form-card .form-row { display: flex; gap: .7rem; flex-wrap: wrap; }
     .form-card .form-row > div { flex: 1; min-width: 160px; }
+    /* Inside a dropdown card, the inner .form-card keeps its input styling but
+       drops its own card chrome (the .acc-card provides it). */
+    .acc-card .form-card { background: transparent; box-shadow: none; border-radius: 0; margin: 0; padding: 0 1rem 1rem; }
+    .acc-card > summary .icon { width: 1em; height: 1em; vertical-align: -.12em; }
     .form-msg { font-size: .85rem; margin-top: .5rem; }
 
     /* Stats cards */
@@ -130,31 +134,33 @@
 
     <!-- ===== SPECIES TAB ===== -->
     <div id="tab-species" class="tab-panel">
-      <div class="form-card">
-        <h3>Add New Species</h3>
-        <div class="form-row">
-          <div>
-            <label>Category *</label>
-            <select id="sp-category"></select>
+      <details class="acc-card">
+        <summary>Add New Species</summary>
+        <div class="form-card">
+          <div class="form-row">
+            <div>
+              <label>Category *</label>
+              <select id="sp-category"></select>
+            </div>
+            <div>
+              <label>Species Name *</label>
+              <input type="text" id="sp-name" placeholder="e.g. Common Kingfisher" />
+            </div>
+            <div>
+              <label>Scientific Name</label>
+              <input type="text" id="sp-scientific" placeholder="e.g. Alcedo atthis" />
+            </div>
+            <div>
+              <label>Description</label>
+              <input type="text" id="sp-desc" placeholder="Optional" />
+            </div>
           </div>
-          <div>
-            <label>Species Name *</label>
-            <input type="text" id="sp-name" placeholder="e.g. Common Kingfisher" />
-          </div>
-          <div>
-            <label>Scientific Name</label>
-            <input type="text" id="sp-scientific" placeholder="e.g. Alcedo atthis" />
-          </div>
-          <div>
-            <label>Description</label>
-            <input type="text" id="sp-desc" placeholder="Optional" />
+          <div style="margin-top:.8rem;display:flex;gap:.6rem;align-items:center">
+            <button class="btn-save" onclick="createSpecies()">Add Species</button>
+            <span id="sp-msg" class="form-msg"></span>
           </div>
         </div>
-        <div style="margin-top:.8rem;display:flex;gap:.6rem;align-items:center">
-          <button class="btn-save" onclick="createSpecies()">Add Species</button>
-          <span id="sp-msg" class="form-msg"></span>
-        </div>
-      </div>
+      </details>
       <div class="filter-row">
         <select id="sp-filter-cat" onchange="loadSpecies()">
           <option value="">All Categories</option>
@@ -174,27 +180,29 @@
 
     <!-- ===== CATEGORIES TAB ===== -->
     <div id="tab-categories" class="tab-panel">
-      <div class="form-card">
-        <h3>Add New Category</h3>
-        <div class="form-row">
-          <div>
-            <label>Category Name *</label>
-            <input type="text" id="cat-name" placeholder="e.g. Mammals" />
+      <details class="acc-card">
+        <summary>Add New Category</summary>
+        <div class="form-card">
+          <div class="form-row">
+            <div>
+              <label>Category Name *</label>
+              <input type="text" id="cat-name" placeholder="e.g. Mammals" />
+            </div>
+            <div>
+              <label>Icon (emoji)</label>
+              <input type="text" id="cat-icon" placeholder="e.g. 🦌" maxlength="4" />
+            </div>
+            <div>
+              <label>SDG Goal</label>
+              <input type="text" id="cat-sdg" placeholder="e.g. SDG14" />
+            </div>
           </div>
-          <div>
-            <label>Icon (emoji)</label>
-            <input type="text" id="cat-icon" placeholder="e.g. 🦌" maxlength="4" />
-          </div>
-          <div>
-            <label>SDG Goal</label>
-            <input type="text" id="cat-sdg" placeholder="e.g. SDG14" />
+          <div style="margin-top:.8rem;display:flex;gap:.6rem;align-items:center">
+            <button class="btn-save" onclick="createCategory()">Add Category</button>
+            <span id="cat-msg" class="form-msg"></span>
           </div>
         </div>
-        <div style="margin-top:.8rem;display:flex;gap:.6rem;align-items:center">
-          <button class="btn-save" onclick="createCategory()">Add Category</button>
-          <span id="cat-msg" class="form-msg"></span>
-        </div>
-      </div>
+      </details>
       <div style="overflow-x:auto">
         <table class="admin-table">
           <thead>
@@ -231,15 +239,17 @@
         <div class="stat-card-sm"><div class="n" id="as-species">—</div><div class="l">Species</div></div>
       </div>
 
-      <div class="form-card" id="inat-token-card" style="margin-top:.5rem">
-        <h3><svg class="icon"><use href="#i-camera"></use></svg> Photo-ID Token (iNaturalist)</h3>
-        <div id="inat-token-body" style="font-size:.92rem">Loading…</div>
-        <p class="form-msg" style="margin-top:.6rem;color:#888">
-          To refresh: get a new token at
-          <a href="https://www.inaturalist.org/users/api_token" target="_blank" rel="noopener">inaturalist.org/users/api_token</a>,
-          paste it into the VM's <code>.env</code> as <code>INAT_API_TOKEN</code>, then run <code>pm2 restart bioreport</code>.
-        </p>
-      </div>
+      <details class="acc-card" id="inat-token-card" open style="margin-top:.5rem">
+        <summary><svg class="icon"><use href="#i-camera"></use></svg> Photo-ID Token (iNaturalist)</summary>
+        <div class="form-card">
+          <div id="inat-token-body" style="font-size:.92rem">Loading…</div>
+          <p class="form-msg" style="margin-top:.6rem;color:#888">
+            To refresh: get a new token at
+            <a href="https://www.inaturalist.org/users/api_token" target="_blank" rel="noopener">inaturalist.org/users/api_token</a>,
+            paste it into the VM's <code>.env</code> as <code>INAT_API_TOKEN</code>, then run <code>pm2 restart bioreport</code>.
+          </p>
+        </div>
+      </details>
     </div>
 
   </div><!-- admin-wrap -->
