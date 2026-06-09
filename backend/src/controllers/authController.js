@@ -45,6 +45,9 @@ async function register(req, res) {
     if (password.length < 6) return res.status(422).json({ error: 'Password must be at least 6 characters' });
 
     const uname   = user_name.trim();
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(uname)) {
+      return res.status(422).json({ error: 'Username must be 3–20 characters: letters, numbers, or underscore only (no spaces).' });
+    }
     const emailLc = email.toLowerCase().trim();
     const type    = ['villager', 'tourist', 'admin'].includes(user_type) ? user_type : 'villager';
 

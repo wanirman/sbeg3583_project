@@ -176,6 +176,10 @@
     const email      = document.getElementById('reg-email').value.trim();
     const password   = document.getElementById('reg-password').value;
     const user_type  = document.getElementById('reg-type').value;
+    if (!/^[A-Za-z0-9_]{3,20}$/.test(user_name)) {
+      err.textContent = 'Username must be 3–20 characters: letters, numbers, or underscore (no spaces).';
+      return;
+    }
     try {
       const info = await BioAPI.register(user_name, email, password, user_type);
       showVerify(email, info);

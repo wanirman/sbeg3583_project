@@ -38,7 +38,7 @@
       <p id="login-error" class="error-msg"></p>
     </form>
     <form id="register-form" class="auth-form">
-      <input type="text" id="reg-username" placeholder="Username" required autocapitalize="none" />
+      <input type="text" id="reg-username" placeholder="Username (3–20: letters, numbers, _)" required autocapitalize="none" pattern="[A-Za-z0-9_]{3,20}" minlength="3" maxlength="20" title="3–20 characters: letters, numbers, or underscore — no spaces" />
       <input type="email" id="reg-email" placeholder="Email" required autocomplete="email" />
       <input type="password" id="reg-password" placeholder="Password (min 6 chars)" required minlength="6" />
       <select id="reg-type">
