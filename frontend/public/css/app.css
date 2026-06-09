@@ -22,7 +22,7 @@
   --silver:      #9aa0a6;
   --bronze:      #b07a4b;
   --shadow:      0 4px 18px rgba(60,46,28,.14);
-  --radius:      11px;
+  --radius:      3px;
   --topbar-h:    56px;
   --nav-h:       64px;
   --font-serif:  'Iowan Old Style','Palatino Linotype','Palatino','Book Antiqua',Georgia,'Times New Roman',serif;
@@ -484,3 +484,19 @@ h1, h2, h3, h4,
   padding: .7rem 1rem; font-size: .95rem; font-weight: 600; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; gap: .4rem; }
 .btn-danger:hover { background: #a31515; }
+
+/* ============================================================
+   SHARP EDGES (trial) — squares off the hardcoded rounded corners.
+   To revert: delete this block and set --radius back to 11px.
+   Circular elements (avatars, location dot) are intentionally excluded.
+   ============================================================ */
+.btn-primary, .btn-secondary, .btn-danger, .btn-text,
+.auth-container, .report-item, .acc-card, .acc-card > summary,
+.stat-card, .chart-section, .helix-card, .profile-card,
+.badges-section, .pending-section, .account-section,
+.map-legend, .points-chip, .type-badge, .count-chip, .sync-chip,
+.legend-item, .filter-chip, .badge-offline,
+input, select, textarea, button {
+  border-radius: 2px;
+}
+.auth-logo-icon img { border-radius: 4px; }
