@@ -6,6 +6,7 @@ const cors    = require('cors');
 const path    = require('path');
 const jwt     = require('jsonwebtoken');
 const { connectDB } = require('./config/database');
+const mailer  = require('./services/mailer');
 
 const app    = express();
 const server = http.createServer(app);
@@ -75,6 +76,7 @@ const PORT = process.env.PORT || 3000;
 
 async function start() {
   await connectDB();
+  await mailer.verifyTransport();   // logs whether real OTP email is live
   server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
 }
 

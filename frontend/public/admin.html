@@ -15,46 +15,50 @@
       background-size: 18px 18px, 18px 18px, 360px 360px;
       background-position: 0 0, 9px 9px, center;
       background-attachment: fixed; }
-    .admin-header { background: #1a3c2e; color: white; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
-    .admin-header h1 { font-size: 1.2rem; margin: 0; }
+    .admin-header { background: var(--green-dark); color: var(--white); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--moss); }
+    .admin-header h1 { font-size: 1.25rem; margin: 0; font-family: var(--font-serif); letter-spacing: .3px; }
     .admin-wrap { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
 
     /* Tabs */
-    .admin-tabs { display: flex; gap: 0; border-bottom: 2px solid #dde; margin-bottom: 1.5rem; overflow-x: auto; }
-    .admin-tab { padding: .6rem 1.2rem; border: none; background: none; cursor: pointer; font-size: .9rem; color: #555; white-space: nowrap; border-bottom: 3px solid transparent; margin-bottom: -2px; }
-    .admin-tab.active { color: #2d7a4f; border-bottom-color: #2d7a4f; font-weight: 600; }
+    .admin-tabs { display: flex; gap: 0; border-bottom: 1.5px dotted var(--line); margin-bottom: 1.5rem; overflow-x: auto; }
+    .admin-tab { padding: .6rem 1.2rem; border: none; background: none; cursor: pointer; font-size: .9rem; color: var(--text-mid); white-space: nowrap; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+    .admin-tab.active { color: var(--green-mid); border-bottom-color: var(--green-mid); font-weight: 600; }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
     /* Login */
-    #login-panel { max-width: 320px; margin: 5rem auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.1); }
-    #login-panel h2 { margin: 0 0 1rem; }
-    #login-panel input { width: 100%; box-sizing: border-box; padding: .7rem; border: 1.5px solid #ddd; border-radius: 8px; margin-bottom: .7rem; font-size: 1rem; }
+    #login-panel { max-width: 320px; margin: 5rem auto; background: var(--white); padding: 2rem; border-radius: 12px; box-shadow: var(--shadow); border: 1px solid rgba(107,142,78,.30); }
+    #login-panel h2 { margin: 0 0 1rem; color: var(--green-dark); font-family: var(--font-serif); }
+    #login-panel input { width: 100%; box-sizing: border-box; padding: .7rem; border: 1.5px solid #d8d2c2; border-radius: 8px; margin-bottom: .7rem; font-size: 1rem; }
 
     /* Table */
     .admin-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
-    .admin-table th { background: #eef2ef; padding: .55rem .7rem; text-align: left; font-weight: 600; border-bottom: 2px solid #cdd; }
-    .admin-table td { padding: .5rem .7rem; border-bottom: 1px solid #eee; vertical-align: middle; }
-    .admin-table tr:hover td { background: #f9fbf9; }
+    .admin-table th { background: var(--green-pale); color: var(--green-dark); padding: .55rem .7rem; text-align: left; font-weight: 600; border-bottom: 2px solid rgba(107,142,78,.4); }
+    .admin-table td { padding: .5rem .7rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    .admin-table tr:hover td { background: rgba(107,142,78,.07); }
+    /* Card wrapper around tables (matches the app's pressed-paper cards) */
+    .table-card { background: var(--white); border: 1px solid rgba(107,142,78,.30); border-radius: 3px;
+      box-shadow: var(--shadow); padding: .4rem .6rem; overflow-x: auto; margin-bottom: 1rem; }
+    .table-card .admin-table { margin: 0; }
     .thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; cursor: pointer; }
     .action-btns { display: flex; gap: .4rem; flex-wrap: wrap; }
-    .btn-verify  { background: #2d7a4f; color: white; border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .8rem; }
-    .btn-reject  { background: #e53935; color: white; border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .8rem; }
-    .btn-edit    { background: #1565c0; color: white; border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .8rem; }
-    .btn-del     { background: #c62828; color: white; border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .8rem; }
-    .btn-save    { background: #2d7a4f; color: white; border: none; padding: .3rem .8rem; border-radius: 6px; cursor: pointer; font-size: .85rem; }
-    .btn-cancel  { background: #888; color: white; border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .85rem; }
+    .btn-verify  { background: var(--green-mid); color: var(--white); border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .8rem; }
+    .btn-reject  { background: var(--red); color: var(--white); border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .8rem; }
+    .btn-edit    { background: var(--blue); color: var(--white); border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .8rem; }
+    .btn-del     { background: var(--red); color: var(--white); border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .8rem; }
+    .btn-save    { background: var(--green-mid); color: var(--white); border: none; padding: .3rem .8rem; border-radius: 6px; cursor: pointer; font-size: .85rem; }
+    .btn-cancel  { background: var(--bark); color: var(--white); border: none; padding: .3rem .7rem; border-radius: 6px; cursor: pointer; font-size: .85rem; }
 
     /* Filter row */
     .filter-row { display: flex; gap: .5rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
-    .filter-row select, .filter-row button { padding: .5rem .9rem; border-radius: 8px; border: 1.5px solid #ddd; font-size: .9rem; cursor: pointer; background: white; }
-    .filter-row button.primary { background: #2d7a4f; color: white; border-color: #2d7a4f; }
+    .filter-row select, .filter-row button { padding: .5rem .9rem; border-radius: 8px; border: 1.5px solid #d8d2c2; font-size: .9rem; cursor: pointer; background: var(--white); }
+    .filter-row button.primary { background: var(--green-mid); color: var(--white); border-color: var(--green-mid); }
 
     /* Add form card */
-    .form-card { background: white; border-radius: 10px; padding: 1.2rem; margin-bottom: 1.5rem; box-shadow: 0 1px 6px rgba(0,0,0,.07); }
-    .form-card h3 { margin: 0 0 1rem; font-size: 1rem; color: #1a3c2e; }
-    .form-card label { display: block; font-size: .85rem; color: #555; margin-bottom: .2rem; margin-top: .6rem; }
-    .form-card input, .form-card select, .form-card textarea { width: 100%; box-sizing: border-box; padding: .55rem; border: 1.5px solid #ddd; border-radius: 7px; font-size: .9rem; }
+    .form-card { background: var(--white); border-radius: 10px; padding: 1.2rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); }
+    .form-card h3 { margin: 0 0 1rem; font-size: 1rem; color: var(--green-dark); font-family: var(--font-serif); }
+    .form-card label { display: block; font-size: .85rem; color: var(--text-mid); margin-bottom: .2rem; margin-top: .6rem; }
+    .form-card input, .form-card select, .form-card textarea { width: 100%; box-sizing: border-box; padding: .55rem; border: 1.5px solid #d8d2c2; border-radius: 7px; font-size: .9rem; }
     .form-card .form-row { display: flex; gap: .7rem; flex-wrap: wrap; }
     .form-card .form-row > div { flex: 1; min-width: 160px; }
     /* Inside a dropdown card, the inner .form-card keeps its input styling but
@@ -65,9 +69,9 @@
 
     /* Stats cards */
     .stats-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
-    .stat-card-sm { flex: 1; min-width: 120px; background: white; border-radius: 10px; padding: 1rem; text-align: center; box-shadow: 0 1px 6px rgba(0,0,0,.07); }
-    .stat-card-sm .n { font-size: 2rem; font-weight: 700; color: #2d7a4f; }
-    .stat-card-sm .l { font-size: .8rem; color: #666; }
+    .stat-card-sm { flex: 1; min-width: 120px; background: var(--white); border-radius: 10px; padding: 1rem; text-align: center; box-shadow: var(--shadow); border: 1px solid rgba(107,142,78,.30); }
+    .stat-card-sm .n { font-size: 2rem; font-weight: 700; color: var(--green-mid); font-family: var(--font-serif); }
+    .stat-card-sm .l { font-size: .8rem; color: var(--text-light); }
 
     /* Photo modal */
     .report-img-modal { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: flex; align-items: center; justify-content: center; z-index: 999; }
@@ -125,7 +129,7 @@
         </select>
         <button class="primary" onclick="loadReports()">Refresh</button>
       </div>
-      <div style="overflow-x:auto">
+      <div class="table-card">
         <table class="admin-table">
           <thead>
             <tr>
@@ -174,7 +178,7 @@
         </select>
         <button class="primary" onclick="loadSpecies()">Refresh</button>
       </div>
-      <div style="overflow-x:auto">
+      <div class="table-card">
         <table class="admin-table" id="species-table">
           <thead>
             <tr><th>ID</th><th>Species Name</th><th>Scientific Name</th><th>Category</th><th>Description</th><th>Actions</th></tr>
@@ -210,7 +214,7 @@
           </div>
         </div>
       </details>
-      <div style="overflow-x:auto">
+      <div class="table-card">
         <table class="admin-table">
           <thead>
             <tr><th>ID</th><th>Icon</th><th>Category Name</th><th>SDG Goal</th></tr>
@@ -223,7 +227,7 @@
 
     <!-- ===== USERS TAB ===== -->
     <div id="tab-users" class="tab-panel">
-      <div style="overflow-x:auto">
+      <div class="table-card">
         <table class="admin-table">
           <thead>
             <tr><th>#</th><th>Username</th><th>Email</th><th>Role</th><th>Points</th><th>Reports</th><th>Change Role</th></tr>
@@ -265,6 +269,7 @@
 <script>
 const API = '/api';
 let adminToken = null;
+let adminUserId = null;
 
 // ===== AUTH =====
 async function adminLogin() {
@@ -278,6 +283,7 @@ async function adminLogin() {
     if (!res.ok) throw new Error(data.error);
     if (data.user_type !== 'admin') throw new Error('Not an admin account');
     adminToken = data.token;
+    adminUserId = data.user_id;
     document.getElementById('login-panel').style.display = 'none';
     document.getElementById('admin-panel').style.display = 'block';
     loadCategories();
@@ -578,7 +584,7 @@ async function loadUsers() {
         <td>${i+1}</td>
         <td>${esc(u.user_name)}</td>
         <td>${esc(u.email)}</td>
-        <td><span style="background:#e8f5e9;color:#2d7a4f;padding:.2rem .5rem;border-radius:5px;font-size:.82rem;font-weight:600;text-transform:capitalize">${u.user_type}</span></td>
+        <td><span style="background:var(--green-pale);color:var(--green-mid);padding:.2rem .5rem;border-radius:5px;font-size:.82rem;font-weight:600;text-transform:capitalize">${u.user_type}</span></td>
         <td>${u.points}</td>
         <td>${u.total_reports||0}</td>
         <td>
@@ -589,6 +595,9 @@ async function loadUsers() {
               <option value="admin"     ${u.user_type==='admin'     ? 'selected':''}>Admin</option>
             </select>
             <button class="btn-save" onclick="updateUserRole('${u.user_id}')">Save</button>
+            ${String(u.user_id) === String(adminUserId)
+              ? '<span style="font-size:.75rem;color:#888;align-self:center">(you)</span>'
+              : `<button class="btn-del" onclick="deleteUser('${u.user_id}','${esc(u.user_name)}')"><svg class="icon"><use href="#i-trash-2"></use></svg> Delete</button>`}
           </div>
         </td>
       `;
@@ -607,6 +616,17 @@ async function updateUserRole(user_id) {
       body: JSON.stringify({ user_type }),
     });
     msg.innerHTML = '<svg class="icon"><use href="#i-check"></use></svg> Role updated.'; msg.style.color = '#2f6043';
+    setTimeout(() => { msg.textContent = ''; }, 3000);
+    loadUsers();
+  } catch(e) { msg.textContent = e.message; msg.style.color = '#c00'; }
+}
+
+async function deleteUser(user_id, name) {
+  const msg = document.getElementById('users-msg');
+  if (!confirm(`Permanently delete user "${name}" and ALL of their reports and chat messages?\n\nThis cannot be undone.`)) return;
+  try {
+    await apiFetch(`/admin/users/${user_id}`, { method: 'DELETE' });
+    msg.innerHTML = `<svg class="icon"><use href="#i-check"></use></svg> Deleted ${name}.`; msg.style.color = '#2f6043';
     setTimeout(() => { msg.textContent = ''; }, 3000);
     loadUsers();
   } catch(e) { msg.textContent = e.message; msg.style.color = '#c00'; }
@@ -668,13 +688,13 @@ function renderInatStatus() {
     const extra = inatExpiryEpoch
       ? ` Current token valid for ${fmtDuration(inatExpiryEpoch - Math.floor(Date.now()/1000))}.`
       : '';
-    body.innerHTML = `${badge('#2d7a4f', 'AUTO-RENEWING')} <span style="margin-left:.4rem">OAuth mode — renews automatically.${extra}</span>`;
+    body.innerHTML = `${badge('var(--green-mid)', 'AUTO-RENEWING')} <span style="margin-left:.4rem">OAuth mode — renews automatically.${extra}</span>`;
     return;
   }
 
   // static mode — live countdown
   if (inatExpiryEpoch == null) {
-    body.innerHTML = `${badge('#2d7a4f', 'ACTIVE')} <span style="margin-left:.4rem">Token set (expiry unknown).</span>`;
+    body.innerHTML = `${badge('var(--green-mid)', 'ACTIVE')} <span style="margin-left:.4rem">Token set (expiry unknown).</span>`;
     return;
   }
   const left = inatExpiryEpoch - Math.floor(Date.now() / 1000);
@@ -683,7 +703,7 @@ function renderInatStatus() {
   } else if (left < 7200) { // under 2 hours
     body.innerHTML = `${badge('#e67e22', 'EXPIRING SOON')} <span style="margin-left:.4rem"><strong>${fmtDuration(left)}</strong> left — refresh soon.</span>`;
   } else {
-    body.innerHTML = `${badge('#2d7a4f', 'ACTIVE')} <span style="margin-left:.4rem"><strong>${fmtDuration(left)}</strong> remaining on the 24h token.</span>`;
+    body.innerHTML = `${badge('var(--green-mid)', 'ACTIVE')} <span style="margin-left:.4rem"><strong>${fmtDuration(left)}</strong> remaining on the 24h token.</span>`;
   }
 }
 

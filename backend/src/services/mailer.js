@@ -56,4 +56,26 @@ async function sendVerificationCode(to, code) {
   return true;
 }
 
-module.exports = { sendVerificationCode, isConfigured };
+// Check SMTP at startup so the server log clearly states whether real email
+// (OTP) is live, or whether it's still running in dev mode.
+async function verifyTransport() {
+  if (!isConfigured()) {
+    console.log('[mailer] No SMTP configured — OTP runs in DEV mode (code returned in API + logged to console).');
+    return false;
+  }
+  const tx = getTransporter();
+  if (!tx) {
+    console.warn('[mailer] SMTP set but transporter unavailable — OTP falling back to DEV mode.');
+    return false;
+  }
+  try {
+    await tx.verify();
+    console.log(`[mailer] Email OTP is LIVE via ${process.env.SMTP_HOST} (from: ${process.env.SMTP_FROM || process.env.SMTP_USER}).`);
+    return true;
+  } catch (e) {
+    console.warn(`[mailer] SMTP verify failed: ${e.message} — OTP will fall back to DEV mode until fixed.`);
+    return false;
+  }
+}
+
+module.exports = { sendVerificationCode, isConfigured, verifyTransport };

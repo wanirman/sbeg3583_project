@@ -44,6 +44,38 @@ async function updateUser(req, res) {
   }
 }
 
+// Permanently delete a user (admin action). Cannot delete your own account here.
+async function deleteUser(req, res) {
+  try {
+    const targetId = parseInt(req.params.user_id);
+    if (targetId === req.user.user_id) {
+      return res.status(400).json({ error: 'You cannot delete your own account here — use Account Settings in the app.' });
+    }
+    const [users] = await pool.query('SELECT user_id, user_name FROM users WHERE user_id = ?', [targetId]);
+    if (!users.length) return res.status(404).json({ error: 'User not found' });
+
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+      // Detach references the user owns elsewhere, then remove their own rows.
+      await conn.query('UPDATE biodiversity_reports SET reviewed_by = NULL WHERE reviewed_by = ?', [targetId]);
+      await conn.query('DELETE FROM chat_messages WHERE sender_id = ?', [targetId]);
+      await conn.query('DELETE FROM biodiversity_reports WHERE user_id = ?', [targetId]);
+      await conn.query('DELETE FROM user_badges WHERE user_id = ?', [targetId]);
+      await conn.query('DELETE FROM users WHERE user_id = ?', [targetId]);
+      await conn.commit();
+    } catch (e) {
+      await conn.rollback();
+      throw e;
+    } finally {
+      conn.release();
+    }
+    return res.json({ message: 'User deleted', user_id: targetId, user_name: users[0].user_name });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 /* ── Species ────────────────────────────────────────────── */
 
 async function createSpecies(req, res) {
@@ -183,4 +215,4 @@ async function getAdminStats(req, res) {
   }
 }
 
-module.exports = { listUsers, updateUser, createSpecies, updateSpecies, deleteSpecies, createCategory, getPendingReports, getAdminStats };
+module.exports = { listUsers, updateUser, deleteUser, createSpecies, updateSpecies, deleteSpecies, createCategory, getPendingReports, getAdminStats };

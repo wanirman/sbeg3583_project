@@ -1,4 +1,4 @@
-const CACHE_NAME = 'biodiversity-pwa-v18';
+const CACHE_NAME = 'biodiversity-pwa-v19';
 const TILE_CACHE = 'map-tiles-v1';
 const OFFLINE_URL = '/offline.html';
 
@@ -69,7 +69,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (url.href.includes('tile.openstreetmap.org') || url.href.includes('/geoserver/')) {
+  if (url.href.includes('tile.openstreetmap.org') || url.href.includes('/geoserver/') ||
+      url.href.includes('server.arcgisonline.com') || url.href.includes('tile.opentopomap.org')) {
     event.respondWith(
       caches.open(TILE_CACHE).then(async cache => {
         const cached = await cache.match(request);

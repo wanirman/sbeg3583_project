@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const { authenticate, requireAdmin } = require('../middleware/auth');
 const {
-  listUsers, updateUser,
+  listUsers, updateUser, deleteUser,
   createSpecies, updateSpecies, deleteSpecies,
   createCategory,
   getPendingReports, getAdminStats,
@@ -14,6 +14,7 @@ router.get('/pending',               getPendingReports);
 
 router.get('/users',                 listUsers);
 router.patch('/users/:user_id',      updateUser);
+router.delete('/users/:user_id',     deleteUser);
 
 router.post('/species',              createSpecies);
 router.patch('/species/:species_id', updateSpecies);

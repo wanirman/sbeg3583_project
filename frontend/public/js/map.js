@@ -3,6 +3,7 @@ const BioMap = (() => {
   let map = null;
   let userMarker = null;
   let accuracyCircle = null;
+  let activeBaseLayers = [];   // tile layers that make up the currently-selected basemap
   const DEFAULT_CENTER = [2.2, 102.2];   // Kg Sungai Timun area — fallback if location denied
   const DEFAULT_ZOOM   = 13;
   const categoryColors = { Birds: '#f9a825', Reptiles: '#e91e63', Plants: '#43a047', Aquatic: '#1e88e5' };
@@ -21,16 +22,43 @@ const BioMap = (() => {
     // Start at the fallback area, then recentre on the user's real location once allowed
     map = L.map('map', { zoomControl: true }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19,
-    }).addTo(map);
+    // ── Base layers (all keyless) ──
+    const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '© OpenStreetMap contributors',
+    });
+    // Esri World Imagery + place/boundary labels = a labelled satellite view
+    const imagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxNativeZoom: 19, maxZoom: 19, attribution: 'Imagery © Esri, Maxar, Earthstar Geographics',
+    });
+    const imageryLabels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+      maxNativeZoom: 19, maxZoom: 19,
+    });
+    const satellite = L.layerGroup([imagery, imageryLabels]);
+    // OpenTopoMap — terrain/contours/vegetation, good for reading habitat
+    const terrain = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      subdomains: 'abc', maxNativeZoom: 17, maxZoom: 19, attribution: '© OpenTopoMap (CC-BY-SA), SRTM',
+    });
+
+    satellite.addTo(map);          // default: habitat-rich satellite
+    setActiveBase(satellite);
+
+    L.control.layers(
+      { 'Satellite': satellite, 'Streets': streets, 'Terrain': terrain },
+      null, { position: 'topright' }
+    ).addTo(map);
+    map.on('baselayerchange', e => setActiveBase(e.layer));
 
     addLocateControl();      // pin button under the +/- zoom buttons
     addDownloadControl();     // "save this area for offline" button
     loadSightings();
     locateUser();             // ask for current location and centre there
     return map;
+  }
+
+  // Track the tile layers behind the active basemap so the offline downloader
+  // saves whatever the user is actually looking at.
+  function setActiveBase(layer) {
+    activeBaseLayers = (layer instanceof L.LayerGroup) ? layer.getLayers() : [layer];
   }
 
   /* ── Offline basemap: pre-cache the tiles for the current view ──
@@ -40,6 +68,17 @@ const BioMap = (() => {
   function lat2tile(lat, z) {
     const r = lat * Math.PI / 180;
     return Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * Math.pow(2, z));
+  }
+
+  // Fill a tile layer's URL template for a given tile coordinate.
+  function buildTileUrl(layer, z, x, y) {
+    let url = layer._url;
+    if (url.includes('{s}')) {
+      const subs = layer.options.subdomains || 'abc';
+      const arr = typeof subs === 'string' ? subs.split('') : subs;
+      url = url.replace('{s}', arr[Math.abs(x + y) % arr.length]);
+    }
+    return url.replace('{z}', z).replace('{x}', x).replace('{y}', y);
   }
 
   function addDownloadControl() {
@@ -75,42 +114,44 @@ const BioMap = (() => {
 
   async function downloadOfflineArea() {
     if (!navigator.onLine) { alert('Connect to the internet first, then save the map for offline use.'); return; }
-    if (!map) return;
+    if (!map || !activeBaseLayers.length) return;
 
     const b = map.getBounds();
-    const z0   = Math.max(13, Math.round(map.getZoom()));
-    const zMax = Math.min(17, z0 + 2);   // current view + 2 zoom levels deeper
+    const z0 = Math.max(13, Math.round(map.getZoom()));
+    // Don't request past the native zoom of the active basemap (avoids 404s).
+    const layerMax = Math.min(...activeBaseLayers.map(l => l.options.maxNativeZoom || l.options.maxZoom || 19));
+    const zMax = Math.min(z0 + 2, layerMax);
 
-    const tiles = [];
+    // One fetch per tile per active layer (Satellite = imagery + labels).
+    const jobs = [];
     for (let z = z0; z <= zMax; z++) {
       const xMin = lon2tile(b.getWest(),  z), xMax = lon2tile(b.getEast(),  z);
       const yMin = lat2tile(b.getNorth(), z), yMax = lat2tile(b.getSouth(), z);
       for (let x = xMin; x <= xMax; x++)
         for (let y = yMin; y <= yMax; y++)
-          tiles.push({ z, x, y });
+          for (const layer of activeBaseLayers)
+            jobs.push(buildTileUrl(layer, z, x, y));
     }
-    if (tiles.length > 3000 &&
-        !confirm(`This will download ${tiles.length} map tiles. Zoom in to a smaller area for less. Continue?`)) return;
+    if (jobs.length > 3000 &&
+        !confirm(`This will download ${jobs.length} map tiles. Zoom in to a smaller area for less. Continue?`)) return;
 
     const status = dlStatus();
     status.hidden = false;
-    status.textContent = `Saving map… 0/${tiles.length}`;
+    status.textContent = `Saving map… 0/${jobs.length}`;
 
-    const queue = tiles.slice();
+    const queue = jobs.slice();
     let done = 0, failed = 0;
     const worker = async () => {
       while (queue.length) {
-        const t = queue.shift();
-        const s = 'abc'[Math.abs(t.x + t.y) % 3];           // match Leaflet's subdomain choice
-        try { await fetch(`https://${s}.tile.openstreetmap.org/${t.z}/${t.x}/${t.y}.png`, { mode: 'cors' }); }
-        catch { failed++; }
+        const u = queue.shift();
+        try { await fetch(u, { mode: 'cors' }); } catch { failed++; }
         done++;
-        if (done % 5 === 0 || done === tiles.length) status.textContent = `Saving map… ${done}/${tiles.length}`;
+        if (done % 5 === 0 || done === jobs.length) status.textContent = `Saving map… ${done}/${jobs.length}`;
       }
     };
     await Promise.all(Array.from({ length: 6 }, worker));   // 6 parallel downloads
 
-    status.textContent = `Map saved for offline (${tiles.length - failed}/${tiles.length} tiles).`;
+    status.textContent = `Map saved for offline (${jobs.length - failed}/${jobs.length} tiles).`;
     setTimeout(() => { status.hidden = true; }, 4000);
   }
 
