@@ -20,6 +20,17 @@
     });
   }
 
+  // ===== Haptic feedback =====
+  // A short buzz when tapping buttons/controls. Works on Android/Chrome (incl.
+  // installed PWA); iOS Safari ignores the Vibration API (silently no-ops).
+  if ('vibrate' in navigator) {
+    document.addEventListener('click', e => {
+      if (e.target.closest('button, .nav-btn, .filter-chip, .auth-tab, .taxa-item, .leaflet-bar a, summary')) {
+        navigator.vibrate(10);
+      }
+    }, { passive: true });
+  }
+
   // ===== PWA install prompt =====
   let deferredInstallPrompt = null;
   const installButtons = () => document.querySelectorAll('.install-btn');

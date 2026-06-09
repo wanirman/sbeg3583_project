@@ -254,10 +254,19 @@
         <summary><svg class="icon"><use href="#i-camera"></use></svg> Photo-ID Token (iNaturalist)</summary>
         <div class="form-card">
           <div id="inat-token-body" style="font-size:.92rem">Loading…</div>
-          <p class="form-msg" style="margin-top:.6rem;color:#888">
-            To refresh: get a new token at
-            <a href="https://www.inaturalist.org/users/api_token" target="_blank" rel="noopener">inaturalist.org/users/api_token</a>,
-            paste it into the VM's <code>.env</code> as <code>INAT_API_TOKEN</code>, then run <code>pm2 restart bioreport</code>.
+          <div style="margin-top:.8rem;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+            <select id="inat-token-type" style="padding:.45rem;border:1.5px solid #d8d2c2;border-radius:3px;font-size:.85rem">
+              <option value="access">Access token (set-once, auto-renews)</option>
+              <option value="api">24-hour API token</option>
+            </select>
+            <input type="text" id="inat-token-input" placeholder="Paste token here" autocomplete="off"
+                   style="flex:1;min-width:180px;padding:.45rem;border:1.5px solid #d8d2c2;border-radius:3px;font-size:.85rem" />
+            <button class="btn-save" onclick="saveInatToken()">Save token</button>
+            <span id="inat-token-msg" class="form-msg" style="width:100%"></span>
+          </div>
+          <p class="form-msg" style="margin-top:.5rem;color:var(--text-light)">
+            <strong>24-hour token:</strong> copy from <a href="https://www.inaturalist.org/users/api_token" target="_blank" rel="noopener">inaturalist.org/users/api_token</a> (must re-paste daily).
+            <strong>Access token:</strong> run <code>scripts/inat-setup.js</code> once — never expires; the renewal bot keeps it fresh.
           </p>
         </div>
       </details>
@@ -673,6 +682,24 @@ function fmtDuration(sec) {
 
 function badge(color, text) {
   return `<span style="display:inline-block;background:${color};color:#fff;padding:.2rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700">${text}</span>`;
+}
+
+async function saveInatToken() {
+  const token_type = document.getElementById('inat-token-type').value;
+  const token      = document.getElementById('inat-token-input').value.trim();
+  const msg        = document.getElementById('inat-token-msg');
+  msg.textContent = '';
+  if (!token) { msg.textContent = 'Paste a token first.'; msg.style.color = '#c00'; return; }
+  try {
+    await apiFetch('/admin/inat-token', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token_type, token }),
+    });
+    msg.innerHTML = '<svg class="icon"><use href="#i-check"></use></svg> Token saved.'; msg.style.color = '#2f6043';
+    document.getElementById('inat-token-input').value = '';
+    loadInatToken(); // refresh the status line
+  } catch (e) { msg.textContent = e.message; msg.style.color = '#c00'; }
 }
 
 function renderInatStatus() {

@@ -7,6 +7,7 @@ const path    = require('path');
 const jwt     = require('jsonwebtoken');
 const { connectDB } = require('./config/database');
 const mailer  = require('./services/mailer');
+const inat    = require('./services/inatAuth');
 
 const app    = express();
 const server = http.createServer(app);
@@ -77,6 +78,7 @@ const PORT = process.env.PORT || 3000;
 async function start() {
   await connectDB();
   await mailer.verifyTransport();   // logs whether real OTP email is live
+  inat.startRenewBot();             // auto-renews the iNaturalist token when one is set
   server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
 }
 

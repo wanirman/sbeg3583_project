@@ -500,3 +500,33 @@ input, select, textarea, button {
   border-radius: 2px;
 }
 .auth-logo-icon img { border-radius: 4px; }
+
+/* ============================================================
+   INTERACTIVE ANIMATIONS
+   ============================================================ */
+/* Tactile press on tappable controls */
+.btn-primary, .btn-secondary, .btn-danger, .btn-text, .nav-btn, .filter-chip,
+.auth-tab, .map-fab, .acc-card > summary {
+  transition: transform .08s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
+}
+.btn-primary:active, .btn-secondary:active, .btn-danger:active,
+.nav-btn:active, .filter-chip:active, .map-fab:active { transform: scale(.95); }
+
+/* Active bottom-nav icon gives a little pop when you switch pages */
+.nav-btn.active .icon { animation: navpop .25s ease; }
+@keyframes navpop { 0% { transform: scale(.8); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+
+/* Page + card entrance (skip the map — animating it causes tile jank) */
+.page.active:not(#page-map) { animation: fadeup .28s ease; }
+.acc-card { animation: fadeup .3s ease both; }
+@keyframes fadeup { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+
+/* Toast/status + success messages slide in */
+.success-msg:not(.hidden), .offline-dl-status { animation: fadeup .25s ease; }
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .page.active, .acc-card, .nav-btn.active .icon,
+  .success-msg, .offline-dl-status { animation: none; }
+  * { transition-duration: .001s !important; }
+}

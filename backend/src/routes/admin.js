@@ -4,7 +4,7 @@ const {
   listUsers, updateUser, deleteUser,
   createSpecies, updateSpecies, deleteSpecies,
   createCategory,
-  getPendingReports, getAdminStats,
+  getPendingReports, getAdminStats, saveInatToken,
 } = require('../controllers/adminController');
 
 router.use(authenticate, requireAdmin);
@@ -21,5 +21,7 @@ router.patch('/species/:species_id', updateSpecies);
 router.delete('/species/:species_id',deleteSpecies);
 
 router.post('/categories',           createCategory);
+
+router.put('/inat-token',            saveInatToken);
 
 module.exports = router;

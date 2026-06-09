@@ -160,8 +160,8 @@ async function identifyPhoto(req, res) {
 }
 
 // Report whether photo-ID is configured and the token's remaining validity
-function inatStatus(req, res) {
-  return res.json(inatAuth.status());
+async function inatStatus(req, res) {
+  return res.json(await inatAuth.status());
 }
 
 module.exports = { resolveSpecies, identifyPhoto, inatStatus };

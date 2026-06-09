@@ -194,6 +194,37 @@ async function getPendingReports(req, res) {
   }
 }
 
+/* ── iNaturalist token (pasted by admin, stored in DB) ──── */
+
+async function saveInatToken(req, res) {
+  try {
+    const { token_type, token } = req.body;
+    if (!['access', 'api'].includes(token_type)) {
+      return res.status(422).json({ error: "token_type must be 'access' (long-lived) or 'api' (24-hour)" });
+    }
+    const val = (token || '').trim();
+    if (!val) return res.status(422).json({ error: 'Paste a token to save' });
+
+    const key   = token_type === 'access' ? 'inat_access_token' : 'inat_api_token';
+    const other = token_type === 'access' ? 'inat_api_token'    : 'inat_access_token';
+
+    await pool.query(
+      `INSERT INTO settings (setting_key, setting_value) VALUES (?, ?)
+       ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP`,
+      [key, val]
+    );
+    // Clear the other DB-stored token so the selected mode is unambiguous.
+    await pool.query('DELETE FROM settings WHERE setting_key = ?', [other]);
+
+    const inatAuth = require('../services/inatAuth');
+    inatAuth.reload();      // pick up the new token immediately (no restart)
+    inatAuth.invalidate();  // drop any cached 24h jwt
+    return res.json({ message: 'iNaturalist token saved', status: await inatAuth.status() });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
 /* ── System stats for admin ─────────────────────────────── */
 
 async function getAdminStats(req, res) {
@@ -215,4 +246,4 @@ async function getAdminStats(req, res) {
   }
 }
 
-module.exports = { listUsers, updateUser, deleteUser, createSpecies, updateSpecies, deleteSpecies, createCategory, getPendingReports, getAdminStats };
+module.exports = { listUsers, updateUser, deleteUser, createSpecies, updateSpecies, deleteSpecies, createCategory, getPendingReports, getAdminStats, saveInatToken };

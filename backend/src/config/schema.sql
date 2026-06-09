@@ -93,3 +93,11 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   CONSTRAINT fk_chat_sender   FOREIGN KEY (sender_id)       REFERENCES users(user_id),
   CONSTRAINT fk_chat_sighting FOREIGN KEY (sighting_ref_id) REFERENCES biodiversity_reports(report_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Editable app settings (key/value). Holds the iNaturalist token pasted by an
+-- admin so it can be changed from the panel without editing .env / restarting.
+CREATE TABLE IF NOT EXISTS settings (
+  setting_key   VARCHAR(64) NOT NULL PRIMARY KEY,
+  setting_value TEXT NULL,
+  updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
